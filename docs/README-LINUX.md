@@ -1,0 +1,585 @@
+> **Note:** this is the original upstream Linux README, retained for reference.
+> The Windows port is documented in the repository root (`README.md` and
+> `README-WINDOWS.md`). Upstream project:
+> <https://github.com/berk-kucuk/entropy-shield>.
+
+<div align="center">
+
+<br/>
+
+<img src="logos/oled.png" alt="Entropy Shield" width="110" />
+
+# Entropy Shield
+
+### Linux Privacy Stack — Tor Transparent Proxy · DNSCrypt · I2P · Onion Server · GUI
+
+*Developed for [Maze Linux](https://github.com/berk-kucuk/MazeLinux)*
+
+[![Website](https://img.shields.io/badge/Website-entropy--shield.berkkucukk.com.tr-0f172a?style=flat-square&logo=googlechrome&logoColor=white)](https://entropy-shield.berkkucukk.com.tr)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
+[![PyQt6](https://img.shields.io/badge/PyQt6-6.4%2B-41CD52?style=flat-square&logo=qt&logoColor=white)](https://pypi.org/project/PyQt6/)
+[![Platform](https://img.shields.io/badge/Platform-Linux-FCC624?style=flat-square&logo=linux&logoColor=black)](https://kernel.org)
+
+<br/>
+
+**A graphical front-end to manage Tor, DNSCrypt-proxy, I2P (i2pd), and Tor hidden services on Linux — all in one place.**
+
+*One-click control over your entire anonymity and privacy layer stack.*
+
+> **Windows build:** this tree now includes a native Windows backend. See
+> [`README-WINDOWS.md`](README-WINDOWS.md) for installation and the
+> differences from the Linux version (Tor is a local proxy rather than a
+> transparent gateway on Windows).
+
+</div>
+
+---
+
+## What is Entropy Shield?
+
+**Entropy Shield** is an open-source Linux privacy tool that lets you combine and control multiple anonymity layers through a single GUI:
+
+- **Tor transparent proxy** — route all TCP traffic through the Tor network
+- **DNSCrypt / DNS encryption** — encrypt DNS queries, prevent DNS leaks
+- **I2P (i2pd)** — access the I2P anonymous network with full transparent proxy support
+- **Onion Server** — host a Tor hidden service (.onion address) from any local directory
+- **Privacy-hardened Firefox** — isolated browser profiles for Tor and I2P browsing
+- **Firewall (nftables/iptables)** — automatic firewall rules with IPv6 leak prevention
+- **Kill switch** — auto-disconnect all layers if any privacy service drops
+
+No more editing `torrc` by hand, writing nftables rules, or restarting systemd services manually. Entropy Shield handles everything and restores your original system config on disconnect.
+
+> **Website:** [entropy-shield.berkkucukk.com.tr](https://entropy-shield.berkkucukk.com.tr)
+
+---
+
+## Table of Contents
+
+- [Screenshots](#screenshots)
+- [Features](#features)
+- [Privacy Layers](#privacy-layers)
+- [Run Any App Through Tor](#run-any-app-through-tor)
+- [Themes](#themes)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Configuration](#configuration)
+- [Architecture](#architecture)
+- [License](#license)
+
+---
+
+## Screenshots
+
+Every theme is monochrome frosted glass over an animated backdrop — the blur is
+rendered inside the window, so it looks the same on every desktop. Colour is
+reserved for meaning: each privacy layer's icon, and the status title (green
+when protected, red when not). Icons: [Lucide](https://lucide.dev) (ISC) and
+[Simple Icons](https://simpleicons.org) (CC0) for the Tor logo — see
+`gui/icons/`. Tor and the onion logo are trademarks of The Tor Project.
+
+### OLED — Pure black, frosted glass
+
+<div align="center">
+<img src="screenshots/oled.png" alt="Entropy Shield OLED Theme - Tor Privacy GUI Linux" width="520" />
+</div>
+
+<br/>
+
+### Light — White frosted glass
+
+<div align="center">
+<img src="screenshots/light.png" alt="Entropy Shield Light Theme" width="520" />
+</div>
+
+<br/>
+
+### Binary — Black glass over live binary rain, monospace type
+
+<div align="center">
+<img src="screenshots/binary.png" alt="Entropy Shield Binary Theme" width="520" />
+</div>
+
+<br/>
+
+### Circuit — Black glass over PCB traces, CPU-chip status
+
+<div align="center">
+<img src="screenshots/circuit.png" alt="Entropy Shield Circuit Theme" width="520" />
+</div>
+
+<br/>
+
+### Pixel — Black glass, pixel blocks, Pixeled headings
+
+<div align="center">
+<img src="screenshots/pixel.png" alt="Entropy Shield Pixel Theme" width="520" />
+</div>
+
+<br/>
+
+### System Tray
+
+<div align="center">
+<img src="screenshots/tray_icon.png" alt="Entropy Shield System Tray" width="600" />
+</div>
+
+---
+
+## Features
+
+| Feature | Description |
+|---|---|
+| **Layered anonymity** | Combine Tor, DNSCrypt, I2P, and Onion Server in any combination |
+| **Automatic firewall** | nftables/iptables rules applied and removed automatically |
+| **IPv6 leak protection** | Full `ip6` table blocks all IPv6 under Tor; DNSCrypt redirects IPv6 DNS |
+| **Tor hidden service** | Publish any local directory as a `.onion` address |
+| **Run any app through Tor** | One app at a time, in a network namespace whose only way out is Tor — fail-closed, no root, works without connecting |
+| **Isolated privacy browsers** | A fresh browser that can only reach the internet through Tor; I2P browser pre-configured for I2P |
+| **Auto circuit renewal** | Tor identity rotates on a configurable timer with desktop notification |
+| **Desktop notifications** | System tray notifications on connect, kill switch events, and circuit renewal |
+| **MAC address randomization** | Randomize interface MAC on connect, restore on disconnect |
+| **Kill switch** | Emergency disconnect if any privacy service drops unexpectedly |
+| **Auto-reconnect** | Automatically reconnect after a kill-switch event |
+| **Auto-connect on startup** | Connect with saved layer selection at launch |
+| **Per-app routing** | Route specific applications through Tor, direct, or block entirely |
+| **Tor bridge support** | obfs4, meek-azure, snowflake, and manual bridge lines |
+| **Real-time network speed** | Live download/upload bar while connected |
+| **Leak test suite** | Tor exit, DNS leak, IPv6 leak, WebRTC, timezone, hostname checks |
+| **Privileged daemon** | Root systemd service; the GUI drives it over a group-restricted Unix socket (no pkexec/sudoers) |
+| **Block DoH** | Block DNS-over-HTTPS to prevent apps from bypassing DNSCrypt |
+| **5 themes** | OLED, Light, Binary, Circuit, Pixel — with animated glow border |
+| **System tray** | Minimize to tray with quick Connect/Disconnect/Quit |
+| **Zero footprint** | All config changes are backed up and reverted on disconnect |
+| **Signed pacman package** | Installed and updated from the Maze repository like any other package |
+
+---
+
+## Privacy Layers
+
+<table>
+<tr>
+<td align="center" width="25%">
+
+### Tor Transparent Proxy
+
+Routes **all TCP traffic** through the Tor anonymity network using nftables `REDIRECT` rules. DNS queries go to Tor's `DNSPort`. **All IPv6 is blocked** to prevent leaks (Tor's TransPort is IPv4-only). Supports custom exit nodes and `StrictNodes`. Auto circuit renewal rotates your Tor identity on a configurable schedule.
+
+</td>
+<td align="center" width="25%">
+
+### DNSCrypt-proxy
+
+Encrypts DNS queries using [dnscrypt-proxy](https://github.com/DNSCrypt/dnscrypt-proxy). Redirects both **IPv4 and IPv6** DNS traffic to prevent DNS leaks. Enforces no-log and no-filter server requirements. Integrates with `systemd-resolved` via `resolvectl`.
+
+</td>
+<td align="center" width="25%">
+
+### I2P (i2pd)
+
+Starts [i2pd](https://i2pd.website) and configures its HTTP proxy and SOCKS proxy. When `redsocks` is available, enables **full transparent proxy** mode for all TCP. When combined with Tor, I2P outbound traffic tunnels through Tor's SOCKS port for layered anonymity.
+
+</td>
+<td align="center" width="25%">
+
+### Tor Hidden Service
+
+Starts a built-in **HTTP file server** and publishes it as a Tor hidden service. Serve any local directory — its contents become accessible at a `.onion` address shown in the activity log. Requires Tor to be active (enforced automatically).
+
+</td>
+</tr>
+</table>
+
+---
+
+## Auto Circuit Renewal
+
+Entropy Shield can automatically rotate your Tor identity on a configurable interval without disconnecting.
+
+**Settings → General → Circuit Renewal (min)**
+
+| Value | Behaviour |
+|---|---|
+| `0` | Disabled (manual only via the **NEW CIRCUIT** button) |
+| `1–120` | Requests `SIGNAL NEWNYM` every N minutes via the Tor control port |
+
+When auto-renewal fires, a desktop notification confirms the new identity is active. The timer starts automatically when Tor connects and stops on disconnect or panic.
+
+---
+
+## Desktop Notifications
+
+Entropy Shield sends system tray notifications for events that happen in the background:
+
+| Event | Notification |
+|---|---|
+| Connected | Active privacy layers |
+| Kill switch triggered | Which service dropped |
+| Auto circuit renewal | New Tor identity active |
+
+Notifications are intentionally minimal — only events the user might otherwise miss while the window is minimised.
+
+---
+
+## Run Any App Through Tor
+
+**Run any app through Tor…**, the **Tor Browser** and **Terminal** buttons, Dolphin's *Run through Tor* right-click entry and `entropy-shield-run` all start one app with **no network of its own**. It runs in a network namespace that has no real network interface: every TCP connection is handed to Tor, every DNS query is answered inside the namespace, and everything else — UDP, IPv6, ICMP — goes nowhere. If Tor stops, the app is cut off. There is no fallback to a direct connection, because there is no direct connection to fall back to.
+
+```bash
+entropy-shield-run --browser                 # a fresh browser
+entropy-shield-run --terminal                # every command in it goes through Tor
+entropy-shield-run konversation              # any program
+entropy-shield-run --desktop /usr/share/applications/org.kde.kmail2.desktop
+entropy-shield-run --list                    # what is running, and where it exits
+```
+
+No root and no password: it uses unprivileged user namespaces, and the app still runs as you. It works **without connecting** Entropy Shield — a private Tor starts as your user and stops a minute after the last app closes. While Entropy Shield *is* connected, apps use its Tor instead, so traffic is never sent through Tor twice.
+
+| | |
+|---|---|
+| **DNS** | Names get placeholder addresses inside the namespace and travel to Tor *as names*, resolved by the exit relay. `.onion` addresses work. Nothing is ever resolved locally. |
+| **Bypass paths closed** | The systemd-resolved, Avahi and system D-Bus sockets are hidden from the app — glibc and some apps resolve names through them, on the host network. |
+| **One circuit per app** | Each app has its own SOCKS identity, so two apps never share a circuit. **New identity** in the window gives one app new circuits. |
+| **Exit country** | Shown for each running app (private Tor). |
+| **Time zone** | The app sees UTC unless `--keep-timezone` is given. |
+| **Browsers** | Get a new empty profile every time, with WebRTC off, deleted on exit. Without it, `firefox` would hand its window to the Firefox that is already open — outside Tor. |
+| **Hand-off warning** | An app from the menu that exits within seconds probably passed its window to a copy already running outside Tor; Entropy Shield says so instead of looking successful. |
+| **Bridges and exit nodes** | Your Settings → Tor choices apply to the private Tor too. |
+
+**What it cannot do:** if the app asks *another* program to open something — a link opened in your normal browser, a file shared through a desktop portal — that other program is not running through Tor. And Tor hides where you are, not who you are: logging in to an account identifies you on any network.
+
+The **I2P BROWSER** button still launches Firefox with an isolated profile set to I2P's proxies (`127.0.0.1:4444` / `4447`), while I2P is connected.
+
+> **Note on DNS over HTTPS (DoH):** Browsers with DoH enabled bypass nftables rules since DoH uses port 443. Entropy Shield's privacy browser profiles disable DoH automatically. For your normal browser, disable DoH manually if you rely on DNSCrypt for DNS encryption.
+
+---
+
+## Themes
+
+Five hand-crafted themes, each with its own color palette, background animation, font, and window style. All themes feature rounded corners and an animated glow border that shifts color with connection state.
+
+| Theme | Style | Font | Background Effect |
+|---|---|---|---|
+| **OLED** | Pure black, white accents | Inter / SF Pro | Ambient radial blobs |
+| **Light** | White panels, dark text | Inter / SF Pro | Ambient radial blobs |
+| **Binary** | Dark black, white highlights | JetBrains Mono / Fira Code | Animated binary rain (0s and 1s) |
+| **Circuit** | Near-black, blue-grey tones | Inter / SF Pro | PCB grid with animated node glows |
+| **Pixel** | Deep black, monochrome grey | Pixeled (pixel-art bitmap) | Animated Minecraft-style pixel blocks |
+
+Switch themes at any time via **Settings → General → Theme**. The entire interface updates instantly.
+
+---
+
+## Requirements
+
+- **OS:** Linux (systemd-based)
+- **Python:** 3.10 or later
+- **PyQt6:** 6.4 or later
+- **Privileges:** A root systemd daemon (`entropy-shield`) performs privileged operations; the GUI itself runs unprivileged and talks to it over a group-restricted Unix socket
+
+**Privacy service dependencies** (pulled in as package dependencies):
+
+| Service | Package |
+|---|---|
+| Tor | `tor` |
+| DNSCrypt | `dnscrypt-proxy` |
+| I2P | `i2pd` |
+| Transparent I2P proxy (optional) | `redsocks` |
+| Firefox (privacy browser) | `firefox` or `firefox-esr` |
+| Firewall | `nftables` / `iptables` |
+
+---
+
+## Installation
+
+### From the Maze repository
+
+**On Maze Linux** the repository is already configured:
+
+```bash
+sudo pacman -S entropy-shield
+```
+
+**On Arch Linux and Arch-based distributions**, add the repository once:
+
+1. Import and trust the Maze signing key:
+
+   ```bash
+   curl -O https://mazerepo.berkkucukk.com.tr/packages/mazelinux.gpg
+   gpg --show-keys --with-fingerprint mazelinux.gpg
+   sudo pacman-key --add mazelinux.gpg
+   sudo pacman-key --lsign-key 7C4D515A6B930CB04794CEF6147C8159B3E2EE5F
+   ```
+
+   The fingerprint `gpg` prints must be `7C4D 515A 6B93 0CB0 4794  CEF6 147C 8159 B3E2 EE5F`.
+
+2. Add the repository to the end of `/etc/pacman.conf`:
+
+   ```ini
+   [mazelinux]
+   SigLevel = Required DatabaseOptional
+   Server = https://mazerepo.berkkucukk.com.tr/packages
+   ```
+
+3. Sync and install:
+
+   ```bash
+   sudo pacman -Syu entropy-shield
+   ```
+
+Optionally install `mazelinux-keyring` as well; it keeps the signing key up to date through pacman.
+
+Remove with `sudo pacman -Rns entropy-shield`.
+
+### Build from source
+
+The package is built from this working tree by `build-pkg.sh` and installed with pacman, exactly like the published one:
+
+```bash
+sudo pacman -S --needed base-devel git
+git clone https://github.com/berk-kucuk/entropy-shield.git
+cd entropy-shield
+sudo pacman -S --needed $(bash -c 'source packaging/PKGBUILD; echo "${depends[@]}" "${makedepends[@]}"')
+./build-pkg.sh --install
+```
+
+Without `--install` the package is only built, into `dist-pkg/`.
+
+### Development
+
+The GUI runs **unprivileged**; the privileged daemon runs as **root** in a
+separate process. From a checkout you can start each by hand:
+
+```bash
+git clone https://github.com/berk-kucuk/entropy-shield.git
+cd entropy-shield
+
+# Terminal 1 — privileged daemon (root). Add yourself to the group first so the
+# GUI can reach the socket:  sudo groupadd -f entropy-shield && sudo usermod -aG entropy-shield "$USER"  (then re-login)
+sudo python3 core/daemon.py
+
+# Terminal 2 — GUI as your normal user
+python3 main.py
+```
+
+---
+
+## Usage
+
+```bash
+entropy-shield
+```
+
+**Basic workflow:**
+
+1. Toggle the service cards you want — Tor, DNSCrypt, I2P, Onion Server
+2. Click **CONNECT** — services start, firewall rules apply, DNS redirects
+3. The status ring and border glow confirm active protection
+4. Optionally open **TOR BROWSER** or **I2P BROWSER** for an isolated Firefox window
+5. Click **DISCONNECT** to stop all services and restore your original system config
+
+**Rotating your Tor identity:**
+
+- Click **NEW CIRCUIT** at any time to get a new Tor exit node immediately
+- Or set **Settings → General → Circuit Renewal** to rotate automatically every N minutes
+
+**Setting up an Onion Server (.onion hidden service):**
+
+1. Open Settings → **ONION SERVER** tab
+2. Set the directory to publish and configure ports
+3. Enable the **ONION SERVER** card (Tor activates automatically)
+4. Click **CONNECT** — your `.onion` address appears in the activity log
+
+**System tray:** Closing the window minimises to tray. The tray icon gives quick access to Show/Hide, Connect/Disconnect, and Quit.
+
+---
+
+## Configuration
+
+Settings are stored at `~/.config/entropy-shield/config.json` and editable via the in-app **Settings** panel.
+
+<details>
+<summary>Default configuration</summary>
+
+```json
+{
+  "theme": "oled",
+  "kill_switch": true,
+  "auto_connect": false,
+  "autostart": true,
+  "auto_reconnect": {
+    "enabled": true,
+    "delay_seconds": 15,
+    "max_attempts": 3
+  },
+  "circuit_renewal_minutes": 0,
+  "mac_randomize": false,
+  "doh_block": true,
+  "tor": {
+    "trans_port": 9040,
+    "dns_port": 5300,
+    "socks_port": 9050,
+    "control_port": 9051,
+    "exit_nodes": "",
+    "strict_nodes": false
+  },
+  "dnscrypt": {
+    "port": 5380,
+    "require_dnssec": false,
+    "require_nolog": true,
+    "require_nofilter": true
+  },
+  "i2p": {
+    "http_port": 4444,
+    "socks_port": 4447,
+    "max_bandwidth": 0
+  },
+  "onion_server": {
+    "local_port": 8080,
+    "hs_port": 80,
+    "serve_dir": ""
+  },
+  "vpn": {
+    "auto_detect": true,
+    "allow": []
+  }
+}
+```
+
+</details>
+
+### Using a VPN at the same time
+
+The kill switch drops everything that is not routed through the active privacy
+layers — which would include a VPN's own tunnel packets. Entropy Shield
+therefore detects active VPNs on connect and exempts only their **transport**
+(the traffic to the VPN server); everything inside the tunnel still goes
+through Tor/I2P ("Tor over VPN"):
+
+- **WireGuard** (wg-quick, NetworkManager, Mullvad, Proton, …): peer endpoints and the tunnel's fwmark (needs the `wg` tool)
+- **OpenVPN / NetworkManager VPNs / IPsec**: the host route the client pins to its server
+- **Tailscale**: its packet mark
+
+If your VPN is not detected (the log says so), add its server address(es) to
+`"vpn": {"allow": ["203.0.113.7"]}`. Set `"auto_detect": false` to exempt only
+what you list.
+
+Both nftables and iptables (nft or legacy) are supported: nftables is used when
+the kernel supports it, otherwise the iptables fallback. While connected, the
+rules are checked every few seconds and re-applied if another tool (ufw,
+firewalld, `iptables -F`, `nft flush ruleset`) removed them.
+
+### Tor Exit Nodes
+
+Restrict exit traffic to specific countries by entering ISO codes in **Settings → Tor**:
+
+```
+Exit Nodes:   {us},{de},{nl}
+Strict Nodes: on
+```
+
+### Circuit Renewal
+
+Configure automatic Tor identity rotation in **Settings → General → Circuit Renewal (min)**. Set to `0` to disable; any positive value rotates the circuit every N minutes. A desktop notification confirms each renewal.
+
+### DNSCrypt Server Requirements
+
+| Option | Description |
+|---|---|
+| Require no-log | Only use resolvers that do not log queries |
+| Require no-filter | Exclude resolvers that apply content filtering |
+| Require DNSSEC | Only use DNSSEC-validating resolvers |
+
+### Onion Server Options
+
+| Option | Description |
+|---|---|
+| Serve Directory | Local folder to publish |
+| Local HTTP Port | Port the HTTP server binds on (`127.0.0.1`) |
+| Onion Port | Port exposed on the `.onion` address (usually `80`) |
+
+---
+
+## Architecture
+
+```
+entropy-shield/
+├── main.py                  # Entry point — GUI (user) or `--service` (root daemon)
+├── install.sh               # Universal distro-detecting installer
+├── core/
+│   ├── config.py            # JSON config with deep-merge defaults
+│   ├── connection.py        # Orchestrates all layers (connect / disconnect)
+│   ├── tor.py               # torrc patching, DNS redirect, circuit renewal, control port
+│   ├── dnscrypt.py          # dnscrypt-proxy config, IPv6 listen, resolved integration
+│   ├── i2p.py               # i2pd config, redsocks transparent proxy, Tor-tunnel mode
+│   ├── onion_server.py      # Tor hidden service config + built-in HTTP file server
+│   ├── browser.py           # Isolated Firefox launcher (Tor / I2P profiles)
+│   ├── firewall.py          # nftables / iptables rules, IPv6 leak prevention
+│   ├── mac.py               # MAC address randomization (NetworkManager-compatible)
+│   ├── leak_test.py         # Tor exit, DNS, IPv6, WebRTC, timezone, hostname checks
+│   ├── autostart.py         # XDG autostart entry management
+│   ├── panic.py             # Emergency user-space disconnect
+│   ├── daemon.py            # Root systemd daemon — serves validated commands over a Unix socket
+│   ├── daemon_client.py     # GUI-side thin client for the daemon socket
+│   └── tray_helper.py       # System tray subprocess (runs as real user)
+├── gui/
+│   ├── main_window.py       # Main window, animated glow border, worker threads, notifications
+│   ├── settings_panel.py    # Slide-in settings overlay
+│   ├── themes.py            # 5-theme palette + QSS generation
+│   └── widgets.py           # ServiceCard, StatusRing, Spinner, ToggleSwitch, NetSpeedBar
+└── logos/                   # Per-theme application icons
+```
+
+### How it Works
+
+Entropy Shield runs a **privileged daemon** (`core/daemon.py`) as a root systemd service (`entropy-shield`). The unprivileged GUI connects to its Unix socket at `/run/entropy-shield/daemon.sock` and sends a small, fixed set of **validated** commands (connect / disconnect / new_circuit / circuit_info / panic / status); the daemon never executes code supplied by the client. The socket is `root:entropy-shield` mode `0660`, so only members of the `entropy-shield` group may connect — the installer adds you to that group. Because the root code lives under root-owned `/opt/entropy-shield` and the trust boundary is the tiny socket protocol, there is **no pkexec, no passwordless-sudo, and no privilege-escalation vector** where a writable script runs as root.
+
+The daemon identifies the connecting user from the socket peer credentials (`SO_PEERCRED`) and reads *that* user's `~/.config/entropy-shield` settings. The system tray helper runs as a separate subprocess under the original user's session to access the D-Bus session bus and register the SNI tray icon. Privacy browsers also run under the real user's identity with a temporary isolated profile at `/tmp/entropy-shield-ff-{tor,i2p}/`.
+
+**CONNECT flow:**
+1. Service configs are patched (originals backed up with `.entropy-shield.bak`)
+2. If Onion Server is enabled, hidden service config is appended to `torrc` and the HTTP file server starts
+3. Services are started via `systemctl restart`
+4. `systemd-resolved` is pointed at the active proxy via `resolvectl`
+5. `FirewallManager` applies nftables rules (Tor TransPort redirect, IPv6 drop, DNS redirect)
+6. MAC address is randomized if enabled (restored on disconnect)
+
+**DISCONNECT flow:**
+1. DNS settings restored via `resolvectl`
+2. Firewall rules flushed (`table ip` and `table ip6`)
+3. HTTP file server stopped
+4. All started services stopped
+5. Config files restored from `.entropy-shield.bak` backups
+6. Original MAC addresses restored
+7. System proxy environment variables cleared
+
+### DNS Leak Prevention
+
+| Scenario | IPv4 DNS | IPv6 DNS |
+|---|---|---|
+| Tor active | Redirected to `DNSPort` | Entire IPv6 stack blocked |
+| DNSCrypt active | Redirected to dnscrypt-proxy | Redirected to `[::1]:port` |
+| Tor + DNSCrypt | Redirected through dnscrypt-proxy | IPv6 blocked by Tor rules |
+
+---
+
+## Related Projects & Keywords
+
+> *This project is related to: tor gui linux, tor transparent proxy linux, dnscrypt gui, i2p linux gui, onion service linux, anonymous browsing linux, privacy linux desktop, dns leak prevention linux, tor frontend linux, i2pd gui, nftables tor, linux anonymity tool, tor proxy manager, dnscrypt-proxy gui, linux privacy software, open source vpn alternative linux, tor network linux app*
+
+---
+
+## License
+
+MIT © [Berk Küçük](https://berkkucukk.com)
+
+---
+
+<div align="center">
+
+**[entropy-shield.berkkucukk.com.tr](https://entropy-shield.berkkucukk.com.tr)**
+
+<sub>Built with Python · PyQt6 · Tor · DNSCrypt · I2P · Onion Server · nftables · Linux</sub>
+
+</div>

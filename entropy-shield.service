@@ -1,0 +1,53 @@
+[Unit]
+Description=Entropy Shield — Privileged Network Privacy Daemon
+Documentation=https://github.com/berk-kucuk/entropy-shield
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/entropy-shield/core/daemon.py
+ExecStop=/bin/kill -TERM $MAINPID
+Restart=on-failure
+RestartSec=10
+# systemd creates /run/entropy-shield (root-owned 0751; 'x' lets privilege-
+# dropped children like Tor's "User tor" reach their own subdirectory without
+# widening the daemon socket's access, which is gated by the socket's own
+# root:entropy-shield 0660 mode — see core/daemon.py:_setup_socket()).
+RuntimeDirectory=entropy-shield
+RuntimeDirectoryMode=0751
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=entropy-shield
+# On SIGTERM the daemon rolls back an active session (firewall, DNS, configs)
+# before exiting; if it is mid-connect it first lets that finish (Tor bootstrap
+# can take up to ~2 min), so give it time instead of SIGKILLing it halfway.
+TimeoutStopSec=180
+# Sandbox (2026-09). Kept: nft/iptables/ip over netlink and raw sockets, tor,
+# resolvectl and systemctl over D-Bus, writes to /etc (dnscrypt, i2pd,
+# profile.d), /run and /var/lib/tor, and `runuser`/`su` to serve the onion
+# share as the desktop user (so no NoNewPrivileges, no ProtectHome — that
+# share lives in their home and their session bus in /run/user). Taken away:
+# /usr and /boot writes, kernel modules, the clock, hostname, kernel log,
+# cgroups, realtime, namespaces, setuid files, foreign-ABI and non-service
+# syscalls (EPERM, not a kill).
+# Verify: sudo maze-sandbox-check   Relax locally: sudo systemctl edit entropy-shield
+ProtectSystem=true
+PrivateTmp=true
+ProtectClock=true
+ProtectHostname=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+
+[Install]
+WantedBy=multi-user.target

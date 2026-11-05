@@ -1,0 +1,117 @@
+# ============================================================
+#  Entropy Shield - Windows
+#  Repository hygiene: Python, Windows, PyInstaller and secrets
+# ============================================================
+
+# ---------- Python bytecode / caches ----------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.python-version
+
+# ---------- Virtual environments ----------
+.venv/
+venv/
+env/
+ENV/
+.conda/
+.env
+.env.*
+!.env.example
+
+# ---------- Test / lint / type-check caches ----------
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.cover
+.cache/
+pip-wheel-metadata/
+
+# ---------- Packaging / build output (PyInstaller) ----------
+/build/
+/dist/
+*.spec
+/Entropy Shield.spec
+/release/
+downloads/
+wheels/
+*.egg-info/
+.eggs/
+MANIFEST
+
+# ---------- Downloaded privacy binaries (scripts/setup-windows.ps1) ----------
+# Tor, dnscrypt-proxy and i2pd are fetched locally and must never be
+# committed.  The placeholder README keeps the folder in a fresh clone.
+/bin/*
+!/bin/README.txt
+
+# ---------- Third-party assets that are NOT MIT-compatible ----------
+# Pixeled.ttf is released under the FontStruct Non-Commercial License and
+# is therefore excluded from this MIT repository.  The "Pixel" theme falls
+# back gracefully to Courier New when the file is absent.
+/Fonts/Pixeled.ttf
+
+# ---------- Local application state / runtime data ----------
+*.log
+*.log.*
+daemon.json
+*.token
+token
+config.local.json
+/config.json
+*.sqlite
+*.sqlite3
+*.db
+*.pid
+*.sock
+*.tmp
+*.bak
+*.orig
+*.rej
+*.swp
+*.swo
+*~
+
+# ---------- Secrets and certificates (defence in depth) ----------
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa*
+id_ed25519*
+secrets.*
+credentials.*
+
+# ---------- Windows / macOS junk ----------
+Thumbs.db
+ehthumbs.db
+desktop.ini
+Desktop.ini
+$RECYCLE.BIN/
+*.stackdump
+*.lnk
+.DS_Store
+.Spotlight-V100
+.Trashes
+
+# ---------- Editors / IDEs ----------
+.vscode/
+.idea/
+.vs/
+*.code-workspace
+
+# ---------- Linux packaging artifacts (upstream tree) ----------
+/dist-pkg/
+*.pkg.tar.*
+/pkg/
+/src/
