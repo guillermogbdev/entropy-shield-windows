@@ -140,9 +140,15 @@ def main() -> None:
     # Keep running in the tray even when the main window is hidden/closed.
     app.setQuitOnLastWindowClosed(False)
 
-    _font_path = os.path.join(os.path.dirname(__file__), "Fonts", "Pixeled.ttf")
-    if os.path.exists(_font_path):
-        QFontDatabase.addApplicationFont(_font_path)
+    # Register every bundled font.  The non-commercial Pixeled font is never
+    # shipped in the public repository; when it is absent, the Pixel theme
+    # falls back to the OFL-licensed Press Start 2P next to it.
+    _font_dir = os.path.join(os.path.dirname(__file__), "Fonts")
+    if os.path.isdir(_font_dir):
+        for _font_name in sorted(os.listdir(_font_dir)):
+            if _font_name.lower().endswith((".ttf", ".otf")):
+                QFontDatabase.addApplicationFont(
+                    os.path.join(_font_dir, _font_name))
 
     w = MainWindow()
     if not start_hidden:

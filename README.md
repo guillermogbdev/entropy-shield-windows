@@ -313,6 +313,7 @@ Windows adaptation: **Guillermo García Blanco**, 2026.
 | [Qt 6](https://www.qt.io/) / [PyQt6](https://riverbankcomputing.com/software/pyqt/) | GPL-3.0 or commercial | GUI toolkit |
 | [Lucide](https://lucide.dev) icons | ISC | Interface icons |
 | [Simple Icons](https://simpleicons.org) | CC0-1.0 | Tor logo |
+| [Press Start 2P](https://github.com/google/fonts/tree/main/ofl/pressstart2p) | SIL OFL 1.1 | Pixel theme display font |
 
 These components are **not** covered by this repository's MIT license. They are
 downloaded at setup time or bundled by the build and remain under their own
@@ -328,10 +329,13 @@ terms. See `gui/icons/LICENSE-lucide.txt` and
 
 ### Fonts
 
-The “Pixel” theme was designed around **Pixeled** by OmegaPC777, distributed
-under the **FontStruct Non-Commercial License**. That font is **not** included
-in this repository because its license is not compatible with an MIT-licensed
-public distribution. Without it, the theme falls back to `Courier New`. See
+The “Pixel” theme ships with **Press Start 2P** by CodeMan38, licensed under
+the **SIL Open Font License 1.1** (see
+[`Fonts/PressStart2P-OFL.txt`](Fonts/PressStart2P-OFL.txt)). The theme was
+originally designed around **Pixeled** by OmegaPC777, but that font uses the
+FontStruct Non-Commercial EULA, whose section 2.3 forbids redistribution; it is
+therefore **not** included in this repository. If a licensed `Pixeled.ttf` is
+present locally it takes priority; otherwise the theme uses Press Start 2P. See
 [`Fonts/README.md`](Fonts/README.md).
 
 ---

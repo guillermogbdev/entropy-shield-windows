@@ -54,9 +54,9 @@ MANIFEST
 !/bin/README.txt
 
 # ---------- Third-party assets that are NOT MIT-compatible ----------
-# Pixeled.ttf is released under the FontStruct Non-Commercial License and
-# is therefore excluded from this MIT repository.  The "Pixel" theme falls
-# back gracefully to Courier New when the file is absent.
+# Pixeled.ttf is released under the FontStruct Non-Commercial License, whose
+# EULA forbids redistribution, so it is excluded from this MIT repository.
+# The "Pixel" theme falls back to the bundled Press Start 2P (SIL OFL 1.1).
 /Fonts/Pixeled.ttf
 
 # ---------- Local application state / runtime data ----------

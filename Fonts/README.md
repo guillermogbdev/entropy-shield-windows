@@ -1,35 +1,45 @@
 # Fonts
 
-The **Pixel** theme was designed around **Pixeled** by OmegaPC777
-(`Copyright OmegaPC777 2016`), distributed under the **FontStruct
-Non-Commercial License** (<https://fontstruct.com/>).
+The **Pixel** theme uses a pixel-art display face for headings and buttons.
+Two fonts are relevant:
 
-That license is **not compatible** with an MIT-licensed public repository, so
-`Pixeled.ttf` is intentionally **excluded** from version control (see
-`.gitignore`). Do not commit it and do not include it in a public release
-archive unless you have verified that your use complies with the FontStruct
-terms.
+## Press Start 2P (included, SIL OFL 1.1)
 
-## Behaviour without the font
+- File: `PressStart2P-Regular.ttf`
+- Author: CodeMan38 / The Press Start 2P Project Authors
+- License: **SIL Open Font License, Version 1.1**
+- License text: `PressStart2P-OFL.txt`
+- Source: <https://github.com/google/fonts/tree/main/ofl/pressstart2p>
 
-`main.py` registers `Fonts/Pixeled.ttf` only when the file exists:
+The OFL permits redistribution and embedding, so this font is tracked in Git
+and included in public builds. It is the fallback for the Pixel theme.
 
-```python
-_font_path = os.path.join(os.path.dirname(__file__), "Fonts", "Pixeled.ttf")
-if os.path.exists(_font_path):
-    QFontDatabase.addApplicationFont(_font_path)
-```
+## Pixeled (NOT included, non-commercial)
 
-If the file is absent, the application starts normally and the Pixel theme
-falls back to `Courier New`; every other theme is unaffected.
+- Author: OmegaPC777 (2016)
+- License: **FontStruct Non-Commercial Software EULA 1.0**
+- License page: <https://fontstruct.com/fontstructions/license/1298421/pixeled-5>
 
-## Local use
+The EULA grants personal use only and, in section 2.3, explicitly forbids
+selling, distributing, redistributing or making the font available as part of
+any product. It is therefore **excluded** from this repository and from public
+release archives (see `.gitignore`).
 
-If you own a licensed copy and want the original look on your own machine, place
-it at:
+If you own a licensed copy and want the original look on your own machine,
+place it at `Fonts/Pixeled.ttf`. Git will ignore it, so it stays local.
+
+## How the fallback works
+
+`main.py` registers every `.ttf`/`.otf` file found in this directory. The
+Pixel theme's CSS asks for:
 
 ```text
-Fonts/Pixeled.ttf
+'Pixeled','Press Start 2P','Courier New',monospace
 ```
 
-Git will ignore it, so it stays local.
+- On a developer machine with a local `Pixeled.ttf`, Qt resolves **Pixeled**.
+- In a clean clone or public build, Qt resolves **Press Start 2P**.
+- If both are missing, it falls back to **Courier New**.
+
+No code change is needed when adding or removing a font: drop the file in this
+folder (and commit it only if its license allows redistribution).
