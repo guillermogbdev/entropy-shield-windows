@@ -23,6 +23,15 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
+if os.name == "nt":
+    # core.torify is the Linux implementation: it imports fcntl and relies on
+    # network namespaces and Unix sockets.  The Windows equivalent lives in
+    # core/windows/torify.py and is covered by test_transparent.py.
+    raise unittest.SkipTest(
+        "core.torify is Linux-only (fcntl / network namespaces); "
+        "the Windows backend is core/windows/torify.py"
+    )
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 

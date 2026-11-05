@@ -416,6 +416,16 @@ The Windows code lives in `core\windows\`:
 - `browser.py`, `torify.py` — browsers and “Run through Tor”.
 - `scripts/install-helper-task.ps1` — persistent helper at logon.
 
+### Tests
+
+```powershell
+python -m unittest discover -s tests -v
+```
+
+`tests/test_transparent.py` covers the Windows transparent-mode profile.
+`tests/test_torify.py` exercises the Linux implementation (`fcntl`, network
+namespaces) and is skipped automatically on Windows.
+
 The Linux modules have not been removed: the same tree still works on Linux with
 systemd, nftables and the original daemon. See
 [`docs/README-LINUX.md`](docs/README-LINUX.md).

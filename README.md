@@ -275,12 +275,16 @@ logos/, screenshots/    Documentation assets
 docs/README-LINUX.md    Original upstream Linux documentation
 ```
 
-Development run:
+Development run and tests:
 
 ```powershell
 python -m pip install PyQt6
 python main.py
+python -m unittest discover -s tests -v
 ```
+
+`tests/test_transparent.py` covers the Windows backend. `tests/test_torify.py`
+targets the Linux implementation and is skipped automatically on Windows.
 
 ---
 
