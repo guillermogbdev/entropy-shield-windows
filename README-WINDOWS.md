@@ -383,6 +383,16 @@ The browser buttons create a new profile with a proxy. If you open your normal
 browser, it keeps using the system configuration and the kill switch blocks its
 direct egress. Close all browser windows before using the isolated profile.
 
+**An app loses its connection when I connect**
+
+Transparent mode routes every TCP connection through Tor. Some applications use
+endpoints that Tor cannot reach (campus/corporate LLM APIs, VPN servers,
+internal services) or long-lived sessions that reset when the route changes.
+Check `%LOCALAPPDATA%\entropy-shield\proxybridge.log` for
+`proxy replied 0x05`. Then open **Settings → Routing** and add the app's
+process as **Direct**, or add the endpoint IP/CIDR to **Direct endpoints**
+(`vpn.allow`). The rest of the system keeps using Tor.
+
 **The Onion Server does not start / port 8080 is reserved**
 Windows may reserve port 8080 (Hyper-V, WSL, another service). If the configured
 port cannot be opened, the app automatically chooses another free port, updates

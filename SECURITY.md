@@ -65,6 +65,9 @@ Out of scope:
   network-namespace sandboxing, transparent I2P, always-on service, code
   signing, IPv6 validation) are listed in the README under
   “Intentionally not implemented (risk trade-offs)”.
+- Direct endpoint/process exemptions (`vpn.allow`, Per-App Routing → Direct)
+  intentionally bypass Tor for those destinations. They are a compatibility
+  trade-off; keep them as narrow as possible.
 
 ## Verifying a release
 

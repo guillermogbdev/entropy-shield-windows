@@ -22,7 +22,9 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
+import threading
 import time
 from pathlib import Path
 from typing import Callable
@@ -33,6 +35,13 @@ from . import paths
 from .admin import is_admin
 
 _READY_MARKERS = ("ProxyBridge started", "Local proxy listening on port")
+
+# ProxyBridge writes e.g.:
+#   SOCKS5 IPv4: CONNECT to 129.241.121.18:443 failed - proxy replied 0x05
+# 0x05 means Tor refused the destination.  Those endpoints usually need a
+# direct route (campus/corporate LLM APIs, VPN servers, internal services).
+_REFUSED_RE = re.compile(
+    r"CONNECT to ([0-9A-Fa-f:.]+:\d+) failed - proxy replied 0x05")
 
 # Processes that must never be forced through the tunnel: Tor would loop, the
 # DNS resolver already speaks to Tor itself, and I2P is a separate network that
@@ -74,6 +83,8 @@ class WindowsTransparentManager:
         self._out = None
         self._profile = paths.data_dir() / "proxybridge-profile.json"
         self._log_file = paths.data_dir() / "proxybridge.log"
+        self._watch_stop = threading.Event()
+        self._watch_thread: threading.Thread | None = None
 
     # ── capability checks ──────────────────────────────────────────────────
     def installed(self) -> bool:
@@ -184,6 +195,27 @@ class WindowsTransparentManager:
         except OSError:
             return ""
 
+    def _watch_refusals(self) -> None:
+        """Log an actionable warning when Tor refuses a destination.
+
+        Transparent mode sends every TCP connection through Tor.  A destination
+        that is only reachable directly appears in ProxyBridge's log as SOCKS
+        reply 0x05; without this watcher the user just sees the app disconnect.
+        """
+        seen: set[str] = set()
+        while not self._watch_stop.is_set():
+            for dest in _REFUSED_RE.findall(self._read_log()):
+                if dest in seen:
+                    continue
+                seen.add(dest)
+                self._log(
+                    f"[TRANSPARENT] Tor refused {dest}. If an app needs this "
+                    "endpoint, open Settings -> Routing and add the app's "
+                    "process as Direct, or add the IP/CIDR to Direct endpoints "
+                    "in the same tab.")
+            if self._watch_stop.wait(2.0):
+                break
+
     def start(self, profile_path: str | None = None,
               log_file: str | None = None,
               label: str = "all TCP → Tor, UDP blocked") -> bool:
@@ -260,9 +292,17 @@ class WindowsTransparentManager:
             return False
 
         self._log(f"[TRANSPARENT] Active: {label}.")
+        self._watch_stop.clear()
+        self._watch_thread = threading.Thread(
+            target=self._watch_refusals, name="es-tor-refusals", daemon=True)
+        self._watch_thread.start()
         return True
 
     def stop(self) -> None:
+        self._watch_stop.set()
+        watch, self._watch_thread = self._watch_thread, None
+        if watch is not None and watch.is_alive():
+            watch.join(timeout=1.0)
         proc, self._proc = self._proc, None
         if proc is not None and proc.poll() is None:
             try:

@@ -259,6 +259,24 @@ powershell -ExecutionPolicy Bypass -File .\scripts\restore-windows.ps1
 - IPv6 is not configured on every network; when present, it is covered by the
   proxy and firewall rules but should be tested explicitly.
 
+### Apps that lose their connection
+
+Transparent mode sends every TCP connection through Tor. Some apps use
+endpoints that Tor cannot reach (campus or corporate LLM APIs, VPN servers,
+internal services) or long-lived sessions that reset when the route changes.
+If an app disconnects after **Connect**:
+
+1. Open **Settings → Routing** and add the app's process (for example
+   `opencode-cli.exe`) as **Direct**.
+2. Or put the endpoint IP/CIDR in **Settings → Routing → Direct endpoints**
+   (stored in `vpn.allow`).
+3. Check `%LOCALAPPDATA%\entropy-shield\proxybridge.log` for
+   `proxy replied 0x05`; the activity log reports the refused endpoint with the
+   same suggestion.
+
+These exemptions are deliberate: that traffic stays direct while the rest of
+the system continues to use Tor.
+
 ### Intentionally not implemented (risk trade-offs)
 
 These features exist in the Linux version or were considered for Windows, but

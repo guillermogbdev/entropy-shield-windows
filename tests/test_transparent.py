@@ -14,7 +14,8 @@ sys.path.insert(0, str(ROOT))
 
 from core.config import cfg  # noqa: E402
 from core.windows.transparent import (  # noqa: E402
-    WindowsTransparentManager, _LOCAL_HOSTS, build_torify_profile,
+    WindowsTransparentManager, _LOCAL_HOSTS, _REFUSED_RE,
+    build_torify_profile,
 )
 
 
@@ -83,6 +84,11 @@ class TransparentProfileTest(unittest.TestCase):
         self.assertIn(("game.exe", "UDP", "DIRECT", "*"), rules)
         self.assertIn(("tracker.exe", "TCP", "BLOCK", "*"), rules)
         self.assertIn(("tracker.exe", "UDP", "BLOCK", "*"), rules)
+
+    def test_refused_endpoint_warning_regex(self) -> None:
+        line = ("[LOG]  SOCKS5 IPv4: CONNECT to 129.241.121.18:443 failed - "
+                "proxy replied 0x05 (connection refused)")
+        self.assertEqual(_REFUSED_RE.findall(line), ["129.241.121.18:443"])
 
     def test_linux_uids_are_ignored(self) -> None:
         cfg().set("per_app_routing", "enabled", True)

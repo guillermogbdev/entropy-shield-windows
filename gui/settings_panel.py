@@ -473,6 +473,20 @@ class SettingsPanel(QWidget):
         lay.addLayout(self._rules_box)
         self._routing_rules: list[dict] = []
         self._render_rules()
+
+        # ── direct endpoints (IP/CIDR) ─────────────────────────
+        lay.addSpacing(8)
+        lay.addWidget(self._section("DIRECT ENDPOINTS (BYPASS TOR)"))
+        self._direct_endpoints = QLineEdit()
+        self._direct_endpoints.setPlaceholderText(
+            "129.241.121.18/32, 10.20.0.0/16")
+        lay.addWidget(self._direct_endpoints)
+        lay.addWidget(self._hint(
+            "IPs or CIDRs that must never go through Tor or the kill switch "
+            "(campus/corporate LLM APIs, VPN servers, internal services). "
+            "Separate with commas or spaces. The rest of the system keeps "
+            "using Tor."))
+
         lay.addStretch()
         return w
 
@@ -684,6 +698,8 @@ class SettingsPanel(QWidget):
         self._routing_rules = [dict(r) for r in par.get("rules", [])]
         self._rule_error.hide()
         self._render_rules()
+        self._direct_endpoints.setText(
+            ", ".join(str(x) for x in (cfg().get("vpn", "allow") or [])))
 
         theme_map = {"oled": 0, "dark": 0, "light": 1, "binary": 2, "circuit": 3, "pixel": 4}
         self._theme_combo.setCurrentIndex(theme_map.get(cfg().get("theme"), 0))
@@ -755,6 +771,14 @@ class SettingsPanel(QWidget):
         rules = [dict(r) for r in self._routing_rules]
         cfg().set("per_app_routing", "enabled", self._routing_enabled.isChecked())
         cfg().set("per_app_routing", "rules",   rules)
+
+        # Direct endpoints (vpn.allow): IPs/CIDRs that bypass Tor and the
+        # kill switch.  The config validator drops anything that is not a
+        # valid address or network.
+        endpoints = [e for e in re.split(r"[\s,]+",
+                                         self._direct_endpoints.text().strip())
+                     if e]
+        cfg().set("vpn", "allow", endpoints)
 
         cfg().set("dnscrypt", "port",             self._dns_port.value())
         cfg().set("dnscrypt", "require_dnssec",   self._dns_dnssec.isChecked())
