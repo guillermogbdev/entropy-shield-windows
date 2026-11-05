@@ -11,6 +11,7 @@
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![PyQt6](https://img.shields.io/badge/PyQt6-6.4%2B-41CD52?style=flat-square&logo=qt&logoColor=white)](https://pypi.org/project/PyQt6/)
 [![Build](https://img.shields.io/badge/Build-portable%20EXE-0f172a?style=flat-square)](#build-a-portable-executable)
+[![Windows build](https://github.com/guillermogbdev/entropy-shield-windows/actions/workflows/windows.yml/badge.svg?branch=main)](https://github.com/guillermogbdev/entropy-shield-windows/actions/workflows/windows.yml)
 
 **One GUI to control Tor, DNSCrypt, I2P and onion services — with transparent, system-wide Tor routing on Windows.**
 

@@ -16,8 +16,8 @@ $root = Split-Path -Parent $PSScriptRoot
 Push-Location $root
 try {
     if (-not $SkipInstall) {
-        python -m pip install --disable-pip-version-check --upgrade pyinstaller
-        if ($LASTEXITCODE -ne 0) { throw "pip install pyinstaller failed." }
+        python -m pip install --disable-pip-version-check -r (Join-Path $root 'requirements-build.txt')
+        if ($LASTEXITCODE -ne 0) { throw "pip install -r requirements-build.txt failed." }
     }
 
     $pyiArgs = @(

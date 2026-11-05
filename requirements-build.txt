@@ -1,0 +1,4 @@
+# Reproducible build dependencies for the portable Windows executable.
+# Keep these pinned so a release can be rebuilt byte-for-byte.
+PyQt6==6.12.0
+pyinstaller==6.22.3
