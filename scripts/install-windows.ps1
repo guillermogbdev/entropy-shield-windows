@@ -40,10 +40,19 @@ Copy-Item (Join-Path $source '*') $Target -Recurse -Force
 
 # The application only needs to read its installation directory; user data
 # lives in %APPDATA% / %LOCALAPPDATA%.
+#
+# Do NOT combine /inheritance:r + /grant:r with /T: on files that combination
+# leaves an empty DACL (deny-all), which blocks the unprivileged GUI and the
+# logon task from reading the EXE.  Set the directory ACL explicitly and let
+# every copied child inherit it.
+& takeown /F $Target /A /R /D Y | Out-Null
 & icacls $Target /inheritance:r /grant:r `
     '*S-1-5-32-544:(OI)(CI)F' `
     '*S-1-5-18:(OI)(CI)F' `
-    '*S-1-5-32-545:(OI)(CI)RX' /T | Out-Null
+    '*S-1-5-32-545:(OI)(CI)RX' | Out-Null
+Get-ChildItem -LiteralPath $Target -Recurse -Force | ForEach-Object {
+    & icacls $_.FullName /reset | Out-Null
+}
 
 $shell = New-Object -ComObject WScript.Shell
 $startMenu = Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs\Entropy Shield.lnk'

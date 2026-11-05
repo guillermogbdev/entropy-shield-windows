@@ -259,6 +259,33 @@ powershell -ExecutionPolicy Bypass -File .\scripts\restore-windows.ps1
 - IPv6 is not configured on every network; when present, it is covered by the
   proxy and firewall rules but should be tested explicitly.
 
+### Intentionally not implemented (risk trade-offs)
+
+These features exist in the Linux version or were considered for Windows, but
+were left out on purpose because the Windows implementation would add more risk
+than value:
+
+- **Ethernet MAC randomization** — there is no reliable API that changes the
+  MAC without restarting the adapter, and a failed change can leave the machine
+  offline. Only Wi-Fi profiles are touched.
+- **Automatic VPN detection (WireGuard/OpenVPN/Tailscale)** — guessing tunnel
+  endpoints can produce false negatives and leak traffic. VPN servers must be
+  listed explicitly in `vpn.allow`.
+- **Network-namespace sandbox for “Run any app through Tor”** — Windows has no
+  equivalent. The port uses a scoped ProxyBridge instance plus a fail-closed
+  monitor; it is process redirection, not an isolated namespace.
+- **Transparent I2P redirection** — I2P stays in HTTP/SOCKS proxy mode. Forcing
+  i2pd transport through Tor can congest Tor and break connectivity, so
+  “Route NTCP2 via Tor” is opt-in.
+- **Always-on Windows service for the privileged backend** — a system service
+  would run with higher privilege and a larger attack surface. The port uses a
+  per-user logon task with a loopback-only helper and a random token.
+- **Automatic code signing** — requires a paid CA certificate and identity
+  verification. Releases publish a SHA-256 instead and remain unsigned.
+- **IPv6 validation on every network** — IPv6 is covered by the proxy and
+  firewall rules, but it was not validated on a network with global IPv6 in
+  this build. Test it explicitly if your ISP provides IPv6.
+
 ---
 
 ## Project layout

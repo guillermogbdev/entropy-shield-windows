@@ -61,6 +61,10 @@ Out of scope:
   different image name inherit only the proxy environment variables.
 - VPN endpoints must be listed explicitly in `vpn.allow`.
 - `Pixeled.ttf` is intentionally excluded for licensing reasons.
+- Risk-based omissions (Ethernet MAC randomization, automatic VPN detection,
+  network-namespace sandboxing, transparent I2P, always-on service, code
+  signing, IPv6 validation) are listed in the README under
+  “Intentionally not implemented (risk trade-offs)”.
 
 ## Verifying a release
 

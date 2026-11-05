@@ -59,6 +59,11 @@ $settings = New-ScheduledTaskSettingsSet `
 Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger `
     -Principal $taskPrincipal -Settings $settings -Force `
     -Description 'Persistent elevated helper for Entropy Shield (loopback only).' | Out-Null
+# A previous helper may still be registered as running while its process was
+# just killed by the installer; with MultipleInstances=IgnoreNew the start
+# would be ignored and the task would stay Ready.  Stop and restart it cleanly.
+Stop-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+Start-Sleep -Milliseconds 500
 Start-ScheduledTask -TaskName $taskName
 Start-Sleep -Seconds 2
 $info = Get-ScheduledTask -TaskName $taskName
