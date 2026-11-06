@@ -1,6 +1,6 @@
-> **Note:** this is the original upstream Linux README, retained for reference.
-> The Windows port is documented in the repository root (`README.md` and
-> `README-WINDOWS.md`). Upstream project:
+> **Note:** this is the original upstream Linux README, retained for reference
+> and attribution. **This repository ships the Windows port**; its documentation
+> is the single root [`README.md`](../README.md). Upstream project:
 > <https://github.com/berk-kucuk/entropy-shield>.
 
 <div align="center">
@@ -16,7 +16,7 @@
 *Developed for [Maze Linux](https://github.com/berk-kucuk/MazeLinux)*
 
 [![Website](https://img.shields.io/badge/Website-entropy--shield.berkkucukk.com.tr-0f172a?style=flat-square&logo=googlechrome&logoColor=white)](https://entropy-shield.berkkucukk.com.tr)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](../LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![PyQt6](https://img.shields.io/badge/PyQt6-6.4%2B-41CD52?style=flat-square&logo=qt&logoColor=white)](https://pypi.org/project/PyQt6/)
 [![Platform](https://img.shields.io/badge/Platform-Linux-FCC624?style=flat-square&logo=linux&logoColor=black)](https://kernel.org)
@@ -27,10 +27,10 @@
 
 *One-click control over your entire anonymity and privacy layer stack.*
 
-> **Windows build:** this tree now includes a native Windows backend. See
-> [`README-WINDOWS.md`](README-WINDOWS.md) for installation and the
-> differences from the Linux version (Tor is a local proxy rather than a
-> transparent gateway on Windows).
+> **Windows build:** this tree also includes a native Windows backend. See
+> [`../README.md`](../README.md) for installation and the differences from the
+> Linux version (on Windows, transparent routing uses ProxyBridge/WinDivert
+> instead of nftables and network namespaces).
 
 </div>
 

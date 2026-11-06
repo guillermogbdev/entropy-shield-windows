@@ -25,7 +25,7 @@ VSVersionInfo(
                        'Windows adaptation (c) 2026 Guillermo Garcia Blanco'),
           StringStruct('OriginalFilename', 'Entropy Shield.exe'),
           StringStruct('ProductName', 'Entropy Shield for Windows'),
-          StringStruct('ProductVersion', '4.3.0-windows.8')
+          StringStruct('ProductVersion', '4.3.0-windows.9')
         ]
       )
     ]),

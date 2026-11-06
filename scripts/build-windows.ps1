@@ -69,7 +69,7 @@ try {
     }
     Copy-Item (Join-Path $root 'LICENSE') $dist -Force
     Copy-Item (Join-Path $root 'README.md') $dist -Force
-    Copy-Item (Join-Path $root 'README-WINDOWS.md') $dist -Force
+    Copy-Item (Join-Path $root 'SECURITY.md') $dist -Force
 
     Write-Host ""
     Write-Host "Built: $dist\Entropy Shield.exe" -ForegroundColor Green
