@@ -4,7 +4,7 @@ import json
 import os
 import subprocess
 
-VERSION = "4.3.0"
+VERSION = "4.4.0"
 _GITHUB_REPO = "berk-kucuk/entropy-shield"
 
 
