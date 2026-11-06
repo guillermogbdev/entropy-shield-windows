@@ -26,6 +26,11 @@ Daily use (recommended)
   the Entropy Shield Helper logon task, so Connect no longer asks for UAC.
 - Installed under Program Files, the executable is read-only for normal users;
   the elevated helper cannot be replaced from a user-writable folder.
+- The helper keeps running in the background after you close the app, on
+  purpose: it is what avoids a UAC prompt on the next Connect. Idle footprint is
+  about 19 MB private memory / 33 MB working set, one thread, 0% CPU; it only
+  listens on 127.0.0.1. Stop it with (Administrator):
+      Stop-ScheduledTask -TaskName 'Entropy Shield Helper'
 
 If an app loses its connection
 - Transparent mode sends every TCP connection through Tor. Some endpoints
@@ -34,6 +39,24 @@ If an app loses its connection
   destination IP/CIDR to Direct endpoints.
 - The activity log reports "Tor refused <ip:port>" with the same advice.
 - scripts\add-direct.ps1 -ListRefused lists endpoints Tor refused.
+
+Networks that can cause problems
+- The app needs no inbound ports and leaves the Windows Firewall in its normal
+  allow mode. Failures are usually the network's firewall or admission policy.
+- Campus / enterprise Wi-Fi (eduroam, 802.1X): many universities block or
+  throttle Tor. Open Settings -> Tor -> Bridges and enable obfs4 or meek-azure.
+  If Tor works but a campus service fails, add that service to Direct endpoints.
+  If Wi-Fi authentication fails after enabling MAC randomization, turn it off
+  for that network.
+- Captive portals (hotels, airports, cafes): sign in to the portal in a browser
+  BEFORE pressing Connect. The kill switch blocks the redirect while connected;
+  if it reappears, Disconnect, sign in, Connect again.
+- Guest Wi-Fi with client isolation: Tor works, but LAN features (Onion Server)
+  cannot be reached from other devices.
+- VPN: add the VPN server IP/CIDR to Settings -> Routing -> Direct endpoints,
+  allow bin\tor\tor\tor.exe in the VPN client's own firewall/kill switch, and
+  usually connect the VPN first. In a VM with NAT, the host VPN is passed
+  through automatically.
 
 Troubleshooting
 - Logs: %LOCALAPPDATA%\entropy-shield\ (daemon.log, proxybridge.log).

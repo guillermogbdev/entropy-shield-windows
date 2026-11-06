@@ -88,7 +88,9 @@ DNSCrypt, i2pd and ProxyBridge/WinDivert are bundled, so **no Python and no
 `setup-windows.ps1` are required**. The first **Connect** asks for UAC. For
 daily use, run `Install to Program Files.bat` to install under
 `%ProgramFiles%\Entropy Shield` and register the helper task (no UAC on later
-connects).
+connects). The helper stays in the background afterwards (~33 MB working set,
+0 % CPU idle) so reopening the app and reconnecting do not ask for UAC again;
+see "Background helper" in `README-WINDOWS.md`.
 
 See `README-FIRST.txt` in the ZIP for SmartScreen/unblock steps and VM notes.
 
@@ -289,6 +291,22 @@ If an app disconnects after **Connect**:
 
 These exemptions are deliberate: that traffic stays direct while the rest of
 the system continues to use Tor.
+
+### Networks that cause trouble
+
+Transparent mode depends on the network underneath it. Common cases:
+
+- **Campus / enterprise Wi-Fi (eduroam, 802.1X)**: many universities block or
+  throttle Tor. Enable **Settings -> Tor -> Bridges** (obfs4 or meek-azure). If
+  Tor works but a campus service does not, add that service to **Direct
+  endpoints**.
+- **Captive portals** (hotels, airports, cafes): sign in to the portal before
+  pressing **Connect**; the kill switch blocks the redirect while connected.
+- **Client-isolated guest Wi-Fi**: Tor works, but LAN features (Onion Server)
+  cannot be reached from other devices.
+- **VPN**: add the VPN server IP/CIDR to **Direct endpoints** and allow
+  `tor.exe` in the VPN client's own firewall. See "Network compatibility" in
+  `README-WINDOWS.md` for the full checklist.
 
 ### Intentionally not implemented (risk trade-offs)
 

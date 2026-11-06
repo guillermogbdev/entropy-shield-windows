@@ -256,6 +256,79 @@ $env:ENTROPY_SHIELD_I2PD = "C:\path\to\i2pd.exe"
 
 ---
 
+## Background helper
+
+Installing with `Install to Program Files.bat` (or `install-windows.ps1`)
+registers the **Entropy Shield Helper** logon task. The helper is the elevated
+part that touches the firewall, DNS, proxy settings and Tor/ProxyBridge; the GUI
+itself never runs with Administrator rights.
+
+It keeps running in the background on purpose:
+
+- it is what lets later **Connect** actions skip the UAC prompt, even after you
+  close and reopen the app;
+- it keeps the firewall/DNS state consistent between sessions and repairs a
+  previous crash on the next start;
+- measured footprint on an idle Windows 11 machine: **~19 MB private memory,
+  ~33 MB working set, one thread, 0 % CPU**. It listens only on `127.0.0.1` and
+  requires the random per-user token in
+  `%LOCALAPPDATA%\entropy-shield\daemon.json`.
+
+For comparison, the GUI uses around 100 MB, so the helper is the small part. It
+is stopped by `scripts\restore-windows.ps1`, by `uninstall-windows.ps1`, and at
+sign-out. To stop it manually:
+
+```powershell
+Stop-ScheduledTask -TaskName 'Entropy Shield Helper'
+```
+
+---
+
+## Network compatibility
+
+The app does **not** need inbound ports and leaves the Windows Firewall in its
+normal allow mode. When something fails on a particular network, the cause is
+usually the **network's own firewall or admission policy**, not Windows.
+
+| Network | What can fail | What to do |
+|---|---|---|
+| **Campus / enterprise Wi-Fi (eduroam, 802.1X)** | Many universities block or throttle Tor; certificate/MAC-based admission can also reject the connection. | Try **Settings -> Tor -> Bridges** (`obfs4` or `meek-azure`). If Tor bootstraps but a campus service fails, add that service to **Direct endpoints**. |
+| **Captive portals** (hotels, airports, cafes) | Tor cannot bootstrap until the portal login is complete, and the kill switch blocks the portal redirect. | Sign in to the portal in a browser **before** pressing Connect. If it reappears, Disconnect, sign in, Connect again. |
+| **Networks that only allow 80/443** | Tor's fallback usually works on 443; some firewalls still block it. | Enable obfs4/meek bridges and retry. |
+| **Guest Wi-Fi with client isolation** | LAN features (Onion Server, local sharing) cannot be reached by other devices. Tor itself works. | Nothing to fix for Tor; use a non-isolated network for LAN features. |
+| **Corporate proxy / TLS inspection** | Proxy rules or certificate inspection can break Tor's TLS. | Use bridges, or a different network. |
+| **VPN on the same machine** | The VPN client's kill switch/firewall can block Tor, or Tor can try to reach the VPN server through itself. | Follow the VPN checklist below. |
+
+### VPN checklist
+
+1. Find the VPN server's public IP (or CIDR) and add it in
+   **Settings -> Routing -> Direct endpoints** (`vpn.allow`). That keeps the
+   tunnel endpoint out of Tor and out of the kill switch.
+2. If the VPN client has its own firewall/kill switch, allow the Tor executable
+   (`bin\tor\tor\tor.exe`) and `ProxyBridge_CLI.exe` there.
+3. Usual order: **VPN first, then Entropy Shield**. If Tor then fails to
+   bootstrap, try the reverse.
+4. In a VM, NAT networking passes the host VPN through automatically; nothing
+   extra is needed inside the guest.
+5. There is **no automatic** WireGuard/OpenVPN/Tailscale detection: endpoints
+   are always explicit.
+
+### eduroam in practice
+
+eduroam is usually reachable; the problem is the institution's outbound policy.
+
+- Tor stuck at "Bootstrapping" for minutes: the network is probably filtering
+  Tor. Enable **obfs4** bridges in Settings -> Tor.
+- Wi-Fi authentication fails after enabling MAC randomization: turn
+  randomization off for that network (eduroam uses 802.1X identities, and some
+  deployments also pin the MAC address).
+- A campus API or LLM endpoint resets: add it to **Direct endpoints**. The
+  activity log reports `Tor refused <ip:port>` for the refused destination.
+- The portal asks you to log in again after Connect: Disconnect first, sign in,
+  then Connect. The kill switch blocks direct traffic while connected by design.
+
+---
+
 ## Security and recovery
 
 - The helper writes a snapshot before touching the firewall, DNS or proxy. If
