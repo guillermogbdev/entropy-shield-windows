@@ -31,6 +31,7 @@ try {
         '--hidden-import', 'core.windows.daemon_win',
         '--hidden-import', 'PyQt6.QtSvg',
         '--version-file', 'packaging/windows-version-info.txt',
+        '--icon', 'packaging/entropy-shield.ico',
         'main.py'
     )
     python -m PyInstaller @pyiArgs

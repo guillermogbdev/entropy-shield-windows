@@ -2,8 +2,8 @@
 # Keep this file ASCII: it becomes the Win32 VERSIONINFO block.
 VSVersionInfo(
   ffi=FixedFileInfo(
-    filevers=(4, 4, 0, 0),
-    prodvers=(4, 4, 0, 0),
+    filevers=(4, 4, 1, 0),
+    prodvers=(4, 4, 1, 0),
     mask=0x3F,
     flags=0x0,
     OS=0x40004,
@@ -18,14 +18,14 @@ VSVersionInfo(
         [
           StringStruct('CompanyName', 'Guillermo Garcia Blanco'),
           StringStruct('FileDescription', 'Entropy Shield'),
-          StringStruct('FileVersion', '4.4.0.0'),
+          StringStruct('FileVersion', '4.4.1.0'),
           StringStruct('InternalName', 'Entropy Shield'),
           StringStruct('LegalCopyright',
                        'Copyright (c) 2026 Berk Kucuk; '
                        'Windows adaptation (c) 2026 Guillermo Garcia Blanco'),
           StringStruct('OriginalFilename', 'Entropy Shield.exe'),
           StringStruct('ProductName', 'Entropy Shield for Windows'),
-          StringStruct('ProductVersion', '4.4.0')
+          StringStruct('ProductVersion', '4.4.1')
         ]
       )
     ]),

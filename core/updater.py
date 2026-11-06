@@ -1,10 +1,10 @@
-"""Auto-update checker — queries GitHub Releases for a newer version."""
+"""Auto-update checker â€” queries GitHub Releases for a newer version."""
 from __future__ import annotations
 import json
 import os
 import subprocess
 
-VERSION = "4.4.0"
+VERSION = "4.4.1"
 _GITHUB_REPO = "berk-kucuk/entropy-shield"
 
 
