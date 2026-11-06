@@ -30,6 +30,7 @@ try {
         '--collect-submodules', 'gui',
         '--hidden-import', 'core.windows.daemon_win',
         '--hidden-import', 'PyQt6.QtSvg',
+        '--version-file', 'packaging/windows-version-info.txt',
         'main.py'
     )
     python -m PyInstaller @pyiArgs

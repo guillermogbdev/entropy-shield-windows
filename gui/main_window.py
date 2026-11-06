@@ -2500,9 +2500,11 @@ class MainWindow(QMainWindow):
         event.ignore()
         if _IS_WINDOWS and getattr(self, "_win_tray", None) is not None:
             self.hide()
-            if not getattr(self, "_tray_hint_shown", False):
-                # Explain where the window went, once per run.
-                self._tray_hint_shown = True
+            if not cfg().get("tray_hint_shown"):
+                # Explain where the window went.  Persisted, so it is shown
+                # once per installation rather than on every close.
+                cfg().set("tray_hint_shown", True)
+                cfg().save()
                 self._notify(
                     "Still running in the notification area",
                     "Open the Entropy Shield shortcut again, or click the tray "

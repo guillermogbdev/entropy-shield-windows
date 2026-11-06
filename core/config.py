@@ -111,6 +111,9 @@ _DEFAULTS: dict = {
         "max_attempts":    3,
     },
     "update_check":             True,
+    # Show the "still running in the notification area" hint once per
+    # installation, not on every close-to-tray.
+    "tray_hint_shown":          False,
     "kill_switch":              True,
     "auto_connect":             False,
     # Linux packages traditionally enable the XDG autostart entry.  On
