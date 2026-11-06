@@ -35,6 +35,7 @@ if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administra
 function Invoke-EntropyShieldRestore {
     $candidates = @(
         (Join-Path $Target 'Entropy Shield.exe'),
+        (Join-Path $root 'Entropy Shield.exe'),
         (Join-Path $root 'dist\Entropy Shield\Entropy Shield.exe')
     )
     foreach ($exe in $candidates) {

@@ -56,6 +56,10 @@ namespaces*.
 
 ## Quick installation
 
+> **Using the release ZIP?** You do not need this section. The portable package
+> already contains Tor, DNSCrypt, i2pd and ProxyBridge; run `Entropy Shield.exe`
+> and follow `README-FIRST.txt`.
+
 Open PowerShell in the project folder:
 
 ```powershell

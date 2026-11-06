@@ -36,9 +36,11 @@ if (-not $principalCheck.IsInRole([Security.Principal.WindowsBuiltInRole]::Admin
 }
 
 if (-not $Exe) {
+    $parent = Split-Path -Parent $PSScriptRoot
     $candidates = @(
         (Join-Path $env:ProgramFiles 'Entropy Shield\Entropy Shield.exe'),
-        (Join-Path (Split-Path -Parent $PSScriptRoot) 'dist\Entropy Shield\Entropy Shield.exe')
+        (Join-Path $parent 'Entropy Shield.exe'),
+        (Join-Path $parent 'dist\Entropy Shield\Entropy Shield.exe')
     )
     $Exe = $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
 }

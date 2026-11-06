@@ -79,7 +79,20 @@ The app is **portable**: it does not need an installer, but installing it under
 
 ---
 
-## Quick start
+## Portable release (fresh Windows VM)
+
+Download the ZIP from
+[Releases](https://github.com/guillermogbdev/entropy-shield-windows/releases),
+extract it and run `Entropy Shield.exe` (or `Start Entropy Shield.bat`). Tor,
+DNSCrypt, i2pd and ProxyBridge/WinDivert are bundled, so **no Python and no
+`setup-windows.ps1` are required**. The first **Connect** asks for UAC. For
+daily use, run `Install to Program Files.bat` to install under
+`%ProgramFiles%\Entropy Shield` and register the helper task (no UAC on later
+connects).
+
+See `README-FIRST.txt` in the ZIP for SmartScreen/unblock steps and VM notes.
+
+## Quick start (from source)
 
 Open PowerShell in the repository root:
 
