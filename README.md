@@ -390,6 +390,10 @@ fail-closed guarantee of transparent mode.
   running the **Restore Entropy Shield network** Start Menu shortcut (installed
   with the app). That shortcut launches the elevated restore even if the GUI
   will not open.
+- **After Connect, Tor is verified with a real request.** Bootstrap alone is not
+  proof that exits are reachable. If Tor cannot complete a SOCKS request within
+  ~15 s, the app disconnects and restores the normal connection instead of
+  leaving you with a dead system proxy.
 - **Disconnect** restores the original state and removes all Entropy Shield
   firewall rules.
 - If something remains blocked, run as Administrator:

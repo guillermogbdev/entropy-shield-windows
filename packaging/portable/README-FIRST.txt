@@ -62,6 +62,8 @@ Networks that can cause problems
   through automatically.
 
 Troubleshooting
+- After Connect the app verifies Tor with a real request. If Tor cannot browse,
+  it disconnects and restores your normal connection in about 15 seconds.
 - If Wi-Fi drops while connected, the app shows "Network lost - protection is
   blocking traffic", restores firewall/DNS/proxy after about a minute and
   retries. You can also click that notification, use Panic, or run the

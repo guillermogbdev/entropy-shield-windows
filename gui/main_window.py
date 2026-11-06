@@ -358,6 +358,30 @@ class _PanicWorker(QThread):
 
 # ── Health check worker ──────────────────────────────────────
 
+class _TorVerifyWorker(QThread):
+    """Confirm that Tor can actually reach the internet after connecting.
+
+    Bootstrap 100 % only means Tor built a circuit; a filtered network can still
+    refuse every exit connection.  Two attempts, three seconds apart, avoid
+    disconnecting on a single transient failure.
+    """
+    result = pyqtSignal(bool)
+
+    def __init__(self, socks_port: int) -> None:
+        super().__init__()
+        self._port = int(socks_port)
+
+    def run(self) -> None:
+        from core.netwatch import tor_reachable
+        for attempt in range(2):
+            if tor_reachable(self._port, timeout=5.0):
+                self.result.emit(True)
+                return
+            if attempt == 0:
+                QThread.msleep(3_000)
+        self.result.emit(False)
+
+
 class _HealthCheckWorker(QThread):
     dropped = pyqtSignal(str, str)  # (service_name, reason_detail)
 
@@ -1047,6 +1071,7 @@ class MainWindow(QMainWindow):
         self._update_worker:   _UpdateCheckWorker | None = None
         self._circuit_worker:  _CircuitInfoWorker | None = None
         self._health_worker:   _HealthCheckWorker | None = None
+        self._verify_worker:   _TorVerifyWorker | None   = None
         self._runner_proc:     "DaemonClient | None"     = None
         self._active_layers:   list[str]                 = []
 
@@ -1715,6 +1740,12 @@ class MainWindow(QMainWindow):
             self._net_timer.start()
             self._status_timer.start()
             if tor_on:
+                self._append_log(
+                    "[>] Verifying that Tor can reach the internet...")
+                self._verify_worker = _TorVerifyWorker(
+                    cfg_port("tor", "socks_port"))
+                self._verify_worker.result.connect(self._on_tor_verified)
+                self._verify_worker.start()
                 self._circuit_timer.start()
                 QTimer.singleShot(3000, self._refresh_circuit_info)
                 renewal = cfg().get("circuit_renewal_minutes")
@@ -1857,6 +1888,24 @@ class MainWindow(QMainWindow):
             self._maybe_schedule_reconnect()
 
     # ── network watchdog ──────────────────────────────────────────────
+    def _on_tor_verified(self, ok: bool) -> None:
+        """Disconnect and restore Internet if Tor cannot actually browse."""
+        if not self._connected:
+            return
+        if ok:
+            self._append_log("[>] Tor can reach the internet.")
+            return
+        self._append_log(
+            "[!] Connected, but Tor cannot reach the internet. "
+            "Restoring your normal connection instead of leaving you offline.")
+        self._notify(
+            "Tor unreachable - restoring Internet",
+            "The app will disconnect and restore your normal network.",
+            7000)
+        self._net_recovering = False
+        self._recovery_timer.stop()
+        self._start_network_restore(reconnect=False)
+
     def _check_network_health(self) -> None:
         """Detect a dropped link that left the kill switch blocking traffic."""
         if not self._connected or self._worker is not None:
