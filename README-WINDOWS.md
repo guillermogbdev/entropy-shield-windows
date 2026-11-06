@@ -399,10 +399,11 @@ process as **Direct**, or add the endpoint IP/CIDR to **Direct endpoints**
 
 **The shortcut seems dead / the app does not open**
 
-Closing the window hides the app in the notification area (it keeps protecting
-the system) instead of quitting it. Launching the shortcut again now restores
-the running window, as does clicking the tray icon. No reboot is needed. Use
-**Quit** in the tray menu to exit completely.
+While a connection is active, closing the window hides the app in the
+notification area so Tor and the kill switch keep running; launching the
+shortcut again restores the window, as does clicking the tray icon. When the app
+is disconnected, the X button **quits** (and the tray menu's **Quit** always
+exits, disconnecting first). No reboot is needed.
 
 **The Onion Server does not start / port 8080 is reserved**
 Windows may reserve port 8080 (Hyper-V, WSL, another service). If the configured

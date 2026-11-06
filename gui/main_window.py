@@ -37,6 +37,7 @@ from gui.settings_panel import SettingsPanel
 from gui.torify_panel import RunAppDialog, TorifyPanel
 from core.torify import apps as torify_apps
 from core.config import cfg, cfg_port
+from core.close_policy import quit_on_close
 from core.updater import VERSION
 import core.browser as browser
 import core.autostart as autostart
@@ -2496,7 +2497,15 @@ class MainWindow(QMainWindow):
         if self._quitting:
             event.accept()
             return
-        # ✕ button → hide to tray (never quit from window close)
+        # X: quit when nothing is protecting the system.  While connected (or
+        # with a connect/disconnect in flight) hide to the tray instead, so
+        # closing the window never tears down Tor and the kill switch.
+        if _IS_WINDOWS and quit_on_close(self._connected,
+                                         self._worker is not None):
+            self._quitting = True
+            event.accept()
+            QTimer.singleShot(0, self._do_quit)
+            return
         event.ignore()
         if _IS_WINDOWS and getattr(self, "_win_tray", None) is not None:
             self.hide()
