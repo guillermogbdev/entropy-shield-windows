@@ -65,3 +65,27 @@ def start_helper() -> tuple[bool, str]:
             "kill switch need it; the rest of the app cannot connect without it."
         )
     return True, "Privileged helper launched."
+
+
+def start_restore() -> tuple[bool, str]:
+    """Launch the elevated ``--windows-restore`` entry point with UAC.
+
+    Last-resort recovery when no helper is alive: the GUI runs as a normal user
+    and cannot restore the firewall on its own.
+    """
+    try:
+        rc = ctypes.windll.shell32.ShellExecuteW(
+            None,
+            "runas",
+            _python_for_helper(),
+            subprocess.list2cmdline(["--windows-restore"]),
+            _app_root(),
+            0,  # SW_HIDE
+        )
+    except Exception as exc:
+        return False, f"Could not start the network restore: {exc}"
+    if rc <= 32:
+        return False, (
+            "Administrator permission was not granted; the firewall cannot be "
+            "restored. Run scripts\\restore-windows.ps1 as Administrator.")
+    return True, "Elevated network restore launched (accept the UAC prompt)."

@@ -64,7 +64,7 @@ try {
     New-Item -ItemType Directory -Force -Path $scriptsDst | Out-Null
     foreach ($name in 'install-portable.ps1', 'install-helper-task.ps1',
                       'check-windows.ps1', 'restore-windows.ps1',
-                      'add-direct.ps1') {
+                      'add-direct.ps1', 'restore-network.bat') {
         Copy-Item (Join-Path $root "scripts\$name") $scriptsDst -Force
     }
     Copy-Item (Join-Path $root 'LICENSE') $dist -Force

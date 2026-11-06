@@ -296,9 +296,10 @@ class _PanicWorker(QThread):
         msgs: list[str] = []
         user_space_panic(log_fn=msgs.append)
 
+        handled = False
         if self._runner and self._runner.poll() is None:
             try:
-                # Wait for an in-flight circuit query rather than racing it —
+                # Wait for an in-flight circuit query rather than racing it,
                 # but never forever: panic must not hang on a stuck worker.
                 got = self._runner.lock.acquire(timeout=10)
                 try:
@@ -316,19 +317,41 @@ class _PanicWorker(QThread):
                 finally:
                     if got:
                         self._runner.lock.release()
+                handled = True
             except Exception as exc:
                 msgs.append(f"[PANIC] Error: {exc}")
             finally:
                 self._runner.close()
-        else:
-            # Runner not running — cannot remove firewall rules without root.
-            # The next runner launch (on reconnect) runs _startup_heal() which
-            # removes stale nftables tables automatically.
+
+        if not handled:
+            # The GUI's session is gone, but the logon-task helper may still be
+            # alive; it can restore the firewall without another UAC prompt.
+            try:
+                from core.windows.client import panic_existing
+                if panic_existing():
+                    msgs.append("[PANIC] Emergency disconnect sent to the "
+                                "running helper.")
+                    handled = True
+                else:
+                    msgs.append("[PANIC] No privileged helper answered.")
+            except Exception as exc:
+                msgs.append(f"[PANIC] Helper panic failed: {exc}")
+
+        if not handled:
+            # Last resort: launch the elevated restore entry point (UAC).
+            try:
+                from core.windows.admin import start_restore
+                ok, message = start_restore()
+                msgs.append(f"[PANIC] {message}")
+                handled = ok
+            except Exception as exc:
+                msgs.append(f"[PANIC] Restore launch failed: {exc}")
+
+        if not handled:
             msgs.append(
-                "[PANIC] WARNING: Privileged process unavailable — "
-                "firewall rules may still be active. "
-                "Click CONNECT to trigger automatic cleanup on next startup."
-            )
+                "[PANIC] WARNING: could not restore the firewall without "
+                "Administrator rights. Run scripts\\restore-windows.ps1 as "
+                "Administrator, or reboot.")
 
         self.done.emit("\n".join(msgs))
 
@@ -1060,6 +1083,24 @@ class MainWindow(QMainWindow):
         self._reconnect_timer.timeout.connect(self._reconnect_tick)
         self._reconnect_countdown: int = 0
 
+        # Network watchdog: a dropped Wi-Fi link leaves the kill switch active.
+        # Three consecutive failed Tor checks (~60 s) restore the network and
+        # retry the connection instead of leaving the user offline.
+        self._net_timer = QTimer(self)
+        self._net_timer.setInterval(20_000)
+        self._net_timer.timeout.connect(self._check_network_health)
+        self._net_fail_count: int = 0
+        self._net_recovering: bool = False
+        self._net_notified: bool = False
+        self._last_notify_action: str = ""
+        self._last_layers: dict | None = None
+        self._panic_reconnect: bool = False
+        self._recovery_timer = QTimer(self)
+        self._recovery_timer.setSingleShot(True)
+        self._recovery_timer.timeout.connect(self._recovery_tick)
+        self._recovery_attempts: int = 0
+        self._recovery_layers: dict | None = None
+
         # Status subtitle update timer (connection duration + circuit info)
         self._status_timer = QTimer(self)
         self._status_timer.setInterval(5_000)
@@ -1168,8 +1209,10 @@ class MainWindow(QMainWindow):
 
     # ── theme ─────────────────────────────────────────────────
 
-    def _notify(self, title: str, body: str, ms: int = 3500) -> None:
-        """Send a desktop notification via the tray helper."""
+    def _notify(self, title: str, body: str, ms: int = 3500,
+                action: str = "") -> None:
+        """Send a desktop notification.  *action* runs if it is clicked."""
+        self._last_notify_action = action
         self._tray_send(f"notify:{title}|{body}|{ms}")
 
     def _apply_theme(self) -> None:
@@ -1586,6 +1629,8 @@ class MainWindow(QMainWindow):
             self._start_worker("connect", layers)
 
     def _start_worker(self, action: str, layers: dict) -> None:
+        if action == "connect":
+            self._last_layers = dict(layers)
         self._connect_btn.setEnabled(False)
         self._connect_btn.setText(
             "Connecting…" if action == "connect" else "Disconnecting…")
@@ -1655,6 +1700,11 @@ class MainWindow(QMainWindow):
             self._notify("Connected", layers_label)
             self._connect_time    = datetime.datetime.now()
             self._reconnect_attempts = 0
+            if self._net_recovering:
+                self._net_recovering = False
+                self._recovery_timer.stop()
+                self._net_fail_count = 0
+                self._append_log("[>] Network recovery: connection restored.")
             if tor_on and not self._update_checked:
                 self._update_checked = True
                 QTimer.singleShot(5000, self._run_update_check)
@@ -1662,6 +1712,7 @@ class MainWindow(QMainWindow):
             self._circuit_count   = 0
             if cfg().get("kill_switch"):
                 self._health_timer.start()
+            self._net_timer.start()
             self._status_timer.start()
             if tor_on:
                 self._circuit_timer.start()
@@ -1674,9 +1725,14 @@ class MainWindow(QMainWindow):
         elif success and info == "disconnect":
             self._connected = False
             self._health_timer.stop()
+            self._net_timer.stop()
             self._status_timer.stop()
             self._circuit_timer.stop()
             self._auto_circuit_timer.stop()
+            self._net_fail_count = 0
+            self._net_notified = False
+            if not self._net_recovering:
+                self._recovery_timer.stop()
             self._connect_time  = None
             self._exit_country  = ""
             self._circuit_count = 0
@@ -1733,6 +1789,7 @@ class MainWindow(QMainWindow):
             self._leak_test_btn.setEnabled(False)
             self._speed_bar.set_active(False)
             self._health_timer.stop()
+            self._net_timer.stop()
             self._status_timer.stop()
             self._circuit_timer.stop()
             self._auto_circuit_timer.stop()
@@ -1741,6 +1798,9 @@ class MainWindow(QMainWindow):
             self._circuit_count  = 0
             self._tray_send("disconnected")
             self._append_log(info if info.startswith("[ERR]") else f"[ERR] {info}")
+            if self._net_recovering:
+                self._append_log("[>] Network recovery: next attempt in 30 s.")
+                self._recovery_timer.start(30_000)
 
     # ── kill switch ───────────────────────────────────────────
 
@@ -1783,6 +1843,7 @@ class MainWindow(QMainWindow):
             self._status_timer.stop()
             self._circuit_timer.stop()
             self._auto_circuit_timer.stop()
+            self._net_timer.stop()
             self._tray_send("disconnected")
         else:
             self._append_log(
@@ -1794,6 +1855,89 @@ class MainWindow(QMainWindow):
             self._notify("Kill Switch", f"{service} dropped — emergency disconnect", 5000)
             self._start_worker("disconnect", {})
             self._maybe_schedule_reconnect()
+
+    # ── network watchdog ──────────────────────────────────────────────
+    def _check_network_health(self) -> None:
+        """Detect a dropped link that left the kill switch blocking traffic."""
+        if not self._connected or self._worker is not None:
+            return
+        if self._panic_worker is not None and self._panic_worker.isRunning():
+            return
+        if self._net_recovering or "tor" not in self._active_layers:
+            return
+
+        from core.netwatch import tor_reachable
+        if tor_reachable(cfg_port("tor", "socks_port")):
+            self._net_fail_count = 0
+            if self._net_notified:
+                self._net_notified = False
+                self._notify("Connection restored",
+                             "Tor is reachable again.", 4000)
+            return
+
+        self._net_fail_count += 1
+        if self._net_fail_count == 1:
+            self._append_log(
+                "[!] Network check: Tor is not reachable "
+                "(link down or filtered).")
+        elif self._net_fail_count == 2 and not self._net_notified:
+            self._net_notified = True
+            self._notify(
+                "Network lost - protection is blocking traffic",
+                "Click here or use Panic/Disconnect to restore Internet.",
+                8000, action="restore")
+        elif self._net_fail_count >= 3:
+            self._begin_network_recovery()
+
+    def _begin_network_recovery(self) -> None:
+        """Restore firewall/DNS/proxy and retry after a lost network."""
+        if self._net_recovering:
+            return
+        self._net_recovering = True
+        self._net_fail_count = 0
+        self._net_notified = False
+        self._recovery_attempts = 0
+        self._recovery_layers = dict(self._last_layers or {})
+        self._append_log(
+            "[!] Network watchdog: Tor unreachable for ~60 s. "
+            "Restoring firewall/DNS/proxy and retrying.")
+        self._set_glow("error")
+        self._set_status("error", "NETWORK LOST", "Restoring and retrying...")
+        self._start_network_restore(reconnect=True)
+
+    def _start_network_restore(self, reconnect: bool) -> None:
+        if self._panic_worker and self._panic_worker.isRunning():
+            return
+        self._panic_reconnect = bool(reconnect)
+        self._panic_worker = _PanicWorker(self._runner_proc)
+        self._panic_worker.done.connect(self._on_panic_done)
+        self._panic_worker.start()
+
+    def _recovery_tick(self) -> None:
+        if not self._net_recovering:
+            return
+        if self._worker is not None:
+            self._recovery_timer.start(3_000)
+            return
+        layers = self._recovery_layers or {}
+        if not any(layers.values()):
+            self._net_recovering = False
+            self._append_log(
+                "[!] Network recovery: no layers selected; connect manually.")
+            return
+        self._recovery_attempts += 1
+        if self._recovery_attempts > 10:
+            self._net_recovering = False
+            self._append_log(
+                "[!] Network recovery: giving up after 10 attempts. "
+                "Click Connect when the network is back.")
+            self._set_status("error", "DISCONNECTED",
+                             "Network recovery failed - click Connect")
+            self._tray_send("disconnected")
+            return
+        self._append_log(
+            f"[>] Network recovery: attempt {self._recovery_attempts}/10...")
+        self._start_worker("connect", dict(layers))
 
     def _maybe_schedule_reconnect(self) -> None:
         """Schedule auto-reconnect if the feature is enabled."""
@@ -1921,6 +2065,11 @@ class MainWindow(QMainWindow):
     def _on_panic(self) -> None:
         if self._panic_worker and self._panic_worker.isRunning():
             return
+        # A manual Panic never auto-reconnects: stop any recovery loop.
+        self._panic_reconnect = False
+        self._net_recovering = False
+        self._recovery_timer.stop()
+        self._net_timer.stop()
         self._append_log("[PANIC] Emergency disconnect triggered!")
         self._set_glow("error")
         self._set_status("error", "PANIC", "Emergency disconnect…")
@@ -1966,8 +2115,14 @@ class MainWindow(QMainWindow):
         self._circuit_timer.stop()
         self._auto_circuit_timer.stop()
         self._reconnect_timer.stop()
+        self._net_timer.stop()
         self._tray_send("disconnected")
         self._append_log("[PANIC] Emergency cleanup complete.")
+        if self._panic_reconnect:
+            self._panic_reconnect = False
+            if not self._quitting:
+                self._append_log("[>] Network recovery: reconnecting in 5 s...")
+                self._recovery_timer.start(5_000)
 
     # ── leak test ─────────────────────────────────────────────
 
@@ -2243,7 +2398,7 @@ class MainWindow(QMainWindow):
         self._win_disconnect_action.setEnabled(False)
         menu.addAction(self._win_disconnect_action)
         menu.addSeparator()
-        panic = QAction("Panic", self)
+        panic = QAction("Panic (restore network)", self)
         panic.triggered.connect(self._on_panic)
         menu.addAction(panic)
         quit_action = QAction("Quit", self)
@@ -2251,6 +2406,7 @@ class MainWindow(QMainWindow):
         menu.addAction(quit_action)
         self._win_tray.setContextMenu(menu)
         self._win_tray.activated.connect(self._on_tray_activated)
+        self._win_tray.messageClicked.connect(self._on_tray_message_clicked)
         self._win_tray.show()
         self._append_log("[>] Tray started.")
 
@@ -2258,6 +2414,12 @@ class MainWindow(QMainWindow):
         if reason in (QSystemTrayIcon.ActivationReason.Trigger,
                       QSystemTrayIcon.ActivationReason.DoubleClick):
             self._tray_toggle()
+
+    def _on_tray_message_clicked(self) -> None:
+        """Act on a notification the user clicked (e.g. restore network)."""
+        action, self._last_notify_action = self._last_notify_action, ""
+        if action == "restore":
+            self._on_panic()
 
     def _poll_activation(self) -> None:
         """Bring the window back when the user launches the app again.

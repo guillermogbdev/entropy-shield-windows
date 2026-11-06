@@ -62,6 +62,16 @@ $lnk.WorkingDirectory = $Target
 $lnk.Description = 'Entropy Shield — Tor, DNSCrypt, I2P privacy stack'
 $lnk.Save()
 
+# Emergency recovery: restore firewall/DNS/proxy even if the GUI is broken.
+$restoreMenu = Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs\Restore Entropy Shield network.lnk'
+$restoreLnk = $shell.CreateShortcut($restoreMenu)
+$restoreLnk.TargetPath = Join-Path $Target 'scripts\restore-network.bat'
+$restoreLnk.WorkingDirectory = $Target
+$restoreLnk.Description = 'Restore firewall, DNS and proxy after an unexpected shutdown'
+$restoreLnk.IconLocation = (Join-Path $Target 'Entropy Shield.exe') + ',0'
+$restoreLnk.Save()
+Write-Host "Emergency shortcut: $restoreMenu"
+
 # Optional but recommended: a persistent elevated helper at logon removes the
 # UAC prompt on every Connect (the closest Windows equivalent to systemd).
 try {

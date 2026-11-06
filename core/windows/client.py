@@ -117,6 +117,42 @@ def shutdown_existing(timeout: float = 5.0) -> None:
             pass
 
 
+def panic_existing(timeout: float = 30.0) -> bool:
+    """Ask an already-running helper to run its emergency disconnect.
+
+    Never starts a helper and never triggers UAC, so Panic still cleans the
+    firewall, DNS and proxy when the GUI's session object is gone but the
+    logon-task helper is alive.
+    """
+    existing = _open_existing(timeout=2.0)
+    if existing is None:
+        return False
+    sock, reader = existing
+    try:
+        sock.settimeout(timeout)
+        reader.readline()  # [RUNNER] started
+        sock.sendall(b"panic\n")
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            line = reader.readline()
+            if not line:
+                return True
+            if b"[PANIC] Connection closed." in line:
+                return True
+        return False
+    except OSError:
+        return False
+    finally:
+        try:
+            reader.close()
+        except Exception:
+            pass
+        try:
+            sock.close()
+        except Exception:
+            pass
+
+
 def control_request(command: str, timeout: float = 45.0,
                     start: bool = True) -> dict:
     """One command/reply over a short helper connection (torify_*).

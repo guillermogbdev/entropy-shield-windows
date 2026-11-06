@@ -31,6 +31,9 @@ Daily use (recommended)
   about 19 MB private memory / 33 MB working set, one thread, 0% CPU; it only
   listens on 127.0.0.1. Stop it with (Administrator):
       Stop-ScheduledTask -TaskName 'Entropy Shield Helper'
+- The installer also creates a Start Menu shortcut, "Restore Entropy Shield
+  network", for emergencies: it restores the firewall, DNS and proxy without
+  opening the app.
 
 If an app loses its connection
 - Transparent mode sends every TCP connection through Tor. Some endpoints
@@ -59,6 +62,10 @@ Networks that can cause problems
   through automatically.
 
 Troubleshooting
+- If Wi-Fi drops while connected, the app shows "Network lost - protection is
+  blocking traffic", restores firewall/DNS/proxy after about a minute and
+  retries. You can also click that notification, use Panic, or run the
+  "Restore Entropy Shield network" Start Menu shortcut.
 - Logs: %LOCALAPPDATA%\entropy-shield\ (daemon.log, proxybridge.log).
 - Emergency network restore (Administrator):
     powershell -ExecutionPolicy Bypass -File scripts\restore-windows.ps1

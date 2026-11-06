@@ -383,6 +383,13 @@ fail-closed guarantee of transparent mode.
 - The helper writes a snapshot before touching the firewall, DNS or proxy. If
   the process dies, the next run repairs the state.
 - **Panic** restores firewall, DNS and proxy immediately.
+- **If the network drops while connected**, the watchdog checks Tor every 20 s,
+  shows **Network lost - protection is blocking traffic**, restores firewall,
+  DNS and proxy, and retries the connection up to 10 times. You can trigger the
+  same recovery at once by clicking the notification, using **Panic**, or
+  running the **Restore Entropy Shield network** Start Menu shortcut (installed
+  with the app). That shortcut launches the elevated restore even if the GUI
+  will not open.
 - **Disconnect** restores the original state and removes all Entropy Shield
   firewall rules.
 - If something remains blocked, run as Administrator:
@@ -491,8 +498,9 @@ an account with the required permissions.
 
 **No Internet after closing the app**
 Use `scripts\restore-windows.ps1` as Administrator; it works with the installed
-version and does not need Python. You can also reboot: the helper saves the
-snapshot and repairs it at startup. Details of the last repair are written to
+version and does not need Python. You can also double-click **Restore Entropy
+Shield network** in the Start Menu, or reboot: the helper saves the snapshot and
+repairs it at startup. Details of the last repair are written to
 `%LOCALAPPDATA%\entropy-shield\restore.log`.
 
 **DNS does not resolve**
