@@ -403,7 +403,9 @@ While a connection is active, closing the window hides the app in the
 notification area so Tor and the kill switch keep running; launching the
 shortcut again restores the window, as does clicking the tray icon. When the app
 is disconnected, the X button **quits** (and the tray menu's **Quit** always
-exits, disconnecting first). No reboot is needed.
+exits, disconnecting first). The privileged helper installed by the logon task
+keeps running after a quit, so the next **Connect** does not ask for UAC again.
+No reboot is needed.
 
 **The Onion Server does not start / port 8080 is reserved**
 Windows may reserve port 8080 (Hyper-V, WSL, another service). If the configured

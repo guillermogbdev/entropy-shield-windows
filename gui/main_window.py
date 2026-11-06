@@ -2374,8 +2374,12 @@ class MainWindow(QMainWindow):
             if tray is not None:
                 tray.hide()
             try:
-                from core.windows.client import shutdown_existing
-                shutdown_existing()
+                from core.windows.client import (
+                    helper_persistent, shutdown_existing)
+                # A helper started by the logon task is meant to outlive the
+                # GUI; keeping it means the next Connect needs no UAC prompt.
+                if not helper_persistent():
+                    shutdown_existing()
             except Exception:
                 pass
             app = QApplication.instance()

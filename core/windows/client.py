@@ -34,7 +34,20 @@ def _control() -> dict | None:
         return None
     if not (1 <= port <= 65535) or not token or pid <= 0:
         return None
-    return {"port": port, "token": token, "pid": pid}
+    return {"port": port, "token": token, "pid": pid,
+            "persist": bool(data.get("persist", False))}
+
+
+def helper_persistent() -> bool:
+    """Return True when the running helper was started by the logon task.
+
+    Persistent helpers are meant to outlive the GUI (the task starts them at
+    logon), so quitting the app must leave them running; otherwise the next
+    Connect would ask for UAC again.  Helpers started on demand with UAC are
+    shut down as before.
+    """
+    info = _control()
+    return bool(info and info.get("persist"))
 
 
 def _open_existing(timeout: float = 3.0):

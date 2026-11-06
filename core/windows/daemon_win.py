@@ -58,6 +58,9 @@ def _write_control(port: int, token: str) -> None:
         "port": int(port),
         "token": token,
         "started": time.time(),
+        # The GUI must not stop a helper started by the logon task: keeping it
+        # alive is what avoids a UAC prompt on the next Connect.
+        "persist": _PERSIST,
     }
     tmp = _CONTROL.with_suffix(".tmp")
     tmp.write_text(json.dumps(data), encoding="utf-8")
