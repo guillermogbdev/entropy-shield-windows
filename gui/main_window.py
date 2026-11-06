@@ -2177,6 +2177,11 @@ class MainWindow(QMainWindow):
     def _build_tray(self) -> None:
         if _IS_WINDOWS:
             self._build_windows_tray()
+            # A second launch signals this instance instead of starting a new
+            # process; poll so the hidden window comes back to the foreground.
+            self._activation_poll = QTimer(self)
+            self._activation_poll.timeout.connect(self._poll_activation)
+            self._activation_poll.start(400)
             return
         tray_logo = _logo_for_theme(cfg().get("theme"))
         try:
@@ -2252,6 +2257,17 @@ class MainWindow(QMainWindow):
         if reason in (QSystemTrayIcon.ActivationReason.Trigger,
                       QSystemTrayIcon.ActivationReason.DoubleClick):
             self._tray_toggle()
+
+    def _poll_activation(self) -> None:
+        """Bring the window back when the user launches the app again.
+
+        Closing the window only hides it to the notification area, so starting
+        a second instance would otherwise exit silently and look like a
+        broken shortcut.
+        """
+        from core.windows import singleton
+        if singleton.consume_activation("gui"):
+            self._tray_show()
 
     def _tray_toggle(self) -> None:
         if self.isVisible() and not self.isMinimized():
@@ -2484,6 +2500,13 @@ class MainWindow(QMainWindow):
         event.ignore()
         if _IS_WINDOWS and getattr(self, "_win_tray", None) is not None:
             self.hide()
+            if not getattr(self, "_tray_hint_shown", False):
+                # Explain where the window went, once per run.
+                self._tray_hint_shown = True
+                self._notify(
+                    "Still running in the notification area",
+                    "Open the Entropy Shield shortcut again, or click the tray "
+                    "icon, to show the window.")
             return
         if self._tray_proc and self._tray_proc.poll() is None:
             self.hide()

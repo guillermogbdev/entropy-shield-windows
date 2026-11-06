@@ -96,7 +96,15 @@ def main() -> None:
         sys.exit(restore_main())
 
     if not _acquire_lock():
-        print("Entropy Shield is already running.")
+        # Closing the window only hides the app to the notification area, so a
+        # new launch must bring the running instance forward.  Exiting silently
+        # here looked exactly like "the app does not open".
+        if os.name == "nt":
+            from core.windows import singleton
+            if not singleton.request_activation("gui"):
+                singleton.activate_existing_window()
+        else:
+            print("Entropy Shield is already running.")
         sys.exit(0)
 
     # Headless / systemd service mode: run the privileged daemon directly.

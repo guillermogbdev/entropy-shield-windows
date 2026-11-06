@@ -397,6 +397,13 @@ Check `%LOCALAPPDATA%\entropy-shield\proxybridge.log` for
 process as **Direct**, or add the endpoint IP/CIDR to **Direct endpoints**
 (`vpn.allow`). The rest of the system keeps using Tor.
 
+**The shortcut seems dead / the app does not open**
+
+Closing the window hides the app in the notification area (it keeps protecting
+the system) instead of quitting it. Launching the shortcut again now restores
+the running window, as does clicking the tray icon. No reboot is needed. Use
+**Quit** in the tray menu to exit completely.
+
 **The Onion Server does not start / port 8080 is reserved**
 Windows may reserve port 8080 (Hyper-V, WSL, another service). If the configured
 port cannot be opened, the app automatically chooses another free port, updates
