@@ -79,8 +79,9 @@ $python = Get-Python
 if ($LASTEXITCODE -ne 0) { throw "Python did not run correctly." }
 
 Write-Step "Installing PyQt6"
-& $python -m pip install --disable-pip-version-check --upgrade PyQt6
-if ($LASTEXITCODE -ne 0) { throw "pip install PyQt6 failed." }
+& $python -m pip install --disable-pip-version-check --upgrade `
+    -r (Join-Path $root 'requirements-windows.txt')
+if ($LASTEXITCODE -ne 0) { throw "pip install -r requirements-windows.txt failed." }
 
 if ($SkipDownload) {
     Write-Step "Skipping binary downloads"

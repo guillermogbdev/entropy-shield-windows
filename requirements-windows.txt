@@ -1,1 +1,3 @@
-PyQt6>=6.4
+# Runtime dependency for source installs (the release ZIP bundles PyQt6).
+# The reproducible build pins an exact version in requirements-build.txt.
+PyQt6>=6.4,<7
